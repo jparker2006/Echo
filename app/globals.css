@@ -1,0 +1,633 @@
+/* ============================================================
+   echo — palette & tokens
+   Fonts (--font-serif / --font-mono) are injected by next/font
+   on the <html> element in app/layout.tsx.
+   ============================================================ */
+
+:root {
+  /* Warm dark "terminal" palette — the default and primary look.
+     Deliberately not behind prefers-color-scheme, so it does not depend
+     on the visitor's system setting. */
+  --paper: #15140f; /* warm near-black, not pure black */
+  --ink: #e9e3d4; /* cream — long-form reading text */
+  --muted: #9a9081;
+  --hairline: #322f29;
+  --accent: #d97a5f; /* PRIMARY accent — coral (body links, hovers) */
+  --amber: #ffd; /* SECONDARY accent — pale phosphor yellow (Raw Thought) */
+  --code-bg: #211f1a;
+
+  /* faint phosphor glow on the "$" sigil */
+  --glow: 0 0 5px rgba(255, 255, 210, 0.3);
+
+  --measure: 39rem;
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   reset
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  line-height: 1.65;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--amber);
+  color: var(--paper);
+}
+
+/* faint fractal-noise grain, fixed over the whole page */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   layout
+   ============================================================ */
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 5rem) 1.5rem 4rem;
+}
+
+/* ============================================================
+   masthead + nav (chrome → mono)
+   ============================================================ */
+
+.masthead {
+  margin-bottom: 2.75rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.brand-word {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(3.4rem, 11vw, 5rem);
+  letter-spacing: -0.01em;
+}
+
+.masthead--compact .brand-word {
+  font-size: clamp(2.1rem, 6vw, 2.6rem);
+}
+
+.nav {
+  margin-top: 1.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1.1rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82rem;
+}
+
+.prompt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  user-select: none;
+}
+
+/* prompt parts, shared by the nav prompt and every "~ $ ..." command line:
+   path is muted, the "$" sigil is amber (with a faint glow), command is cream */
+.cmd-path {
+  color: var(--muted);
+}
+
+.cmd-sigil {
+  color: var(--amber);
+  text-shadow: var(--glow);
+}
+
+.cmd-text {
+  color: var(--ink);
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.nav a:hover {
+  color: var(--amber);
+}
+
+.masthead--compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.masthead--compact .nav {
+  margin-top: 0;
+}
+
+/* ============================================================
+   home — post list
+   ============================================================ */
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-item {
+  padding: 0.25rem 0;
+}
+
+.post-date,
+.post-meta,
+.log-year {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.post-title {
+  font-weight: 500;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  font-style: italic;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.post-title a {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.post-title a:hover {
+  color: var(--accent);
+}
+
+.post-excerpt {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+/* centered divider between posts */
+.divider {
+  text-align: center;
+  color: var(--hairline);
+  letter-spacing: 0.5em;
+  margin: 2.5rem 0;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+/* ============================================================
+   single post / prose
+   ============================================================ */
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.post-meta .tags {
+  color: var(--accent);
+}
+
+.post-h1 {
+  font-weight: 500;
+  font-size: clamp(2rem, 5.5vw, 2.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0.6rem 0 2rem;
+}
+
+.prose {
+  font-size: 19px;
+  line-height: 1.65;
+}
+
+.post-body > * + * {
+  margin-top: 1.25rem;
+}
+
+.post-body h2,
+.post-body h3,
+.post-body h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 2.4rem;
+}
+
+.post-body h2 {
+  font-size: 1.5rem;
+}
+
+.post-body h3 {
+  font-size: 1.22rem;
+}
+
+.post-body p,
+.post-body li {
+  color: var(--ink);
+}
+
+.post-body ul,
+.post-body ol {
+  padding-left: 1.4rem;
+}
+
+.post-body li + li {
+  margin-top: 0.4rem;
+}
+
+.post-body strong {
+  font-weight: 600;
+}
+
+.post-body hr {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 2.5rem 0;
+}
+
+/* body links: thin underline that solidifies on hover */
+.post-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  transition: text-decoration-color 0.18s ease;
+}
+
+.post-body a:hover {
+  text-decoration-color: var(--accent);
+}
+
+/* blockquotes: left hairline, italic, muted */
+.post-body blockquote {
+  border-left: 2px solid var(--hairline);
+  padding-left: 1.1rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.post-body blockquote p {
+  color: var(--muted);
+}
+
+/* images */
+.post-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 3px;
+}
+
+/* tables (remark-gfm) */
+.post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.post-body th,
+.post-body td {
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+}
+
+.post-body th {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ============================================================
+   code — inline + blocks (rehype-pretty-code / Shiki)
+   ============================================================ */
+
+.post-body code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--code-bg);
+  padding: 0.12em 0.36em;
+  border-radius: 3px;
+}
+
+/* code-block title from ```lang title="..." */
+figure[data-rehype-pretty-code-figure] {
+  margin-top: 1.5rem;
+}
+
+[data-rehype-pretty-code-title] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--code-bg);
+  border-left: 2px solid var(--accent);
+  padding: 0.45rem 0.9rem 0.2rem;
+  border-radius: 2px 2px 0 0;
+}
+
+[data-rehype-pretty-code-title] + pre {
+  border-radius: 0 0 2px 2px;
+  margin-top: 0;
+}
+
+.post-body pre {
+  background: var(--code-bg);
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 0.95rem 1.05rem;
+  overflow-x: auto;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.post-body pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+  display: grid; /* lets line highlights span the gutter */
+}
+
+/* dual-theme token colors via CSS variables emitted by rehype-pretty-code.
+   The site is always dark, so we always use the dark token set. */
+.post-body pre code [data-line] {
+  padding: 0 0.1rem;
+}
+
+code[data-theme],
+code[data-theme] span {
+  color: var(--shiki-dark);
+}
+
+/* highlighted lines from ```lang {1,3-5} */
+.post-body pre code [data-highlighted-line] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-left: 2px solid var(--accent);
+  margin-left: -1.05rem;
+  padding-left: calc(1.05rem - 2px);
+  margin-right: -1.05rem;
+  padding-right: 1.05rem;
+}
+
+/* ============================================================
+   projects — reverse-chronological log
+   ============================================================ */
+
+.cmd {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+}
+
+.project-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Each project is a list item wrapping a clip wrapper wrapping the row.
+   The inter-row spacing lives on .log-clip (padding-top) so it collapses
+   together with a hidden row instead of leaving a gap behind. */
+.log-clip {
+  padding-top: 1.1rem;
+}
+
+.log-item:first-child .log-clip {
+  padding-top: 0;
+}
+
+/* one row per project — year rail on the left, name + one-liner on the right.
+   Tight like `ls` output, but cohesive with the post list. */
+.log-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  align-items: baseline;
+  column-gap: 1.25rem;
+}
+
+/* Non-featured rows: collapsed to zero height until `ls -a` expands them.
+   Height animates via the grid 0fr→1fr trick; the clip fades + slides in.
+   prefers-reduced-motion zeroes these transitions globally (see bottom). */
+.log-item--collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.log-item--collapsible > .log-clip {
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.34s ease,
+    transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.log-item--collapsible.is-collapsed {
+  grid-template-rows: 0fr;
+}
+
+/* a collapsed row that is immediately followed by a visible row would lose
+   its neighbor's top spacing; keep the gap on the first visible sibling by
+   leaving padding on .log-clip (above). Collapsed clip simply has none shown. */
+.log-item--collapsible.is-collapsed > .log-clip {
+  opacity: 0;
+  transform: translateY(-6px);
+  padding-top: 0;
+}
+
+.log-main {
+  min-width: 0; /* let long one-liners wrap instead of overflowing */
+}
+
+.log-name {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.3rem;
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--ink); /* plain cream when there's no link */
+}
+
+/* coral link when a repo url is given */
+.log-name a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.log-name a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.log-desc {
+  color: var(--ink);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  margin-top: 0.15rem;
+}
+
+/* stack on narrow screens */
+@media (max-width: 34rem) {
+  .log-row {
+    grid-template-columns: 1fr;
+    row-gap: 0.1rem;
+  }
+}
+
+/* The single self-rewriting `ls` toggle — the only control above the list.
+   Styled like a prompt line (same mono font/size), but clearly interactive:
+   pointer cursor, a chevron + count affordance, and an amber hover underline.
+   (Don't use `font: inherit` here — the shorthand would reset font-family to
+   the body serif. Match .cmd's mono/size explicitly instead.) */
+.cmd-toggle {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82rem;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* hold a fixed width so the chevron + count stay aligned across both states
+   ("ls -a /projects" is the wider of the two command strings) */
+.cmd-toggle .cmd-text {
+  display: inline-block;
+  min-width: 15ch;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.18s ease;
+}
+
+/* the affordance: muted chevron + count, brightens with the rest on hover */
+.cmd-hint {
+  margin-left: 1.25rem;
+  color: var(--muted);
+  transition: color 0.18s ease;
+}
+
+.cmd-caret {
+  color: var(--amber);
+}
+
+.cmd-toggle:hover .cmd-text,
+.cmd-toggle:focus-visible .cmd-text {
+  text-decoration-color: var(--amber);
+}
+
+.cmd-toggle:hover .cmd-hint,
+.cmd-toggle:focus-visible .cmd-hint {
+  color: var(--ink);
+}
+
+.cmd-toggle:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   back link
+   ============================================================ */
+
+.back {
+  margin-top: 3rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.back a:hover {
+  color: var(--accent);
+}
+
+/* ============================================================
+   load animation — staggered fade-up
+   ============================================================ */
+
+.fade-up {
+  animation: fade-up 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   respect reduced motion — disable all animation
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

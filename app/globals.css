@@ -85,7 +85,7 @@ body::before {
    ============================================================ */
 
 .masthead {
-  margin-bottom: 2.75rem;
+  margin-bottom: 2rem;
 }
 
 .brand {
@@ -167,10 +167,11 @@ body::before {
 .post-list {
   display: flex;
   flex-direction: column;
+  gap: 2rem;
 }
 
 .post-item {
-  padding: 0.25rem 0;
+  padding: 0;
 }
 
 .post-date,
@@ -204,16 +205,6 @@ body::before {
   color: var(--muted);
   font-size: 1.02rem;
   line-height: 1.55;
-}
-
-/* centered divider between posts */
-.divider {
-  text-align: center;
-  color: var(--hairline);
-  letter-spacing: 0.5em;
-  margin: 2.5rem 0;
-  font-size: 0.9rem;
-  user-select: none;
 }
 
 /* ============================================================
@@ -318,6 +309,12 @@ body::before {
   max-width: 100%;
   height: auto;
   border-radius: 3px;
+  display: block;
+}
+
+/* tighten the gap directly below a standalone image */
+.post-body p:has(> img) + * {
+  margin-top: 0.75rem;
 }
 
 /* tables (remark-gfm) */
@@ -422,7 +419,7 @@ code[data-theme] span {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.82rem;
   color: var(--muted);
-  margin-bottom: 1.75rem;
+  margin-bottom: 1rem;
 }
 
 .project-log {

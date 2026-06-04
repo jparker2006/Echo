@@ -32,15 +32,6 @@ export function Prompt({ command }: { command: string }) {
   );
 }
 
-/** A centered "·   ·   ·" rule, used between posts. */
-export function Divider() {
-  return (
-    <div className="divider" aria-hidden="true">
-      ·&ensp;&ensp;·&ensp;&ensp;·
-    </div>
-  );
-}
-
 /** Centered reading column shared by every page: header + content. */
 export function Shell({
   children,

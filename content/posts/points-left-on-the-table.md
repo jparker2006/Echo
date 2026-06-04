@@ -1,150 +1,132 @@
 ---
 title: "Points left on the table"
-date: "2026-05-31"
+date: "2026-06-03"
+description: "Basketball's box score rewards results, not decisions. But can we actually measure them? I built an eval bar to find out, and here's what it found."
 ---
 
-*An eval bar for NBA possessions — and what it told me about decisions (and about building research with an AI).*
+I love basketball. I've been watching it my whole life. And I'm convinced the box score is lying to us.
 
-I watch a lot of basketball. Probably too much. And the longer I watch, the more one thing nags at me:
-the box score is lying to me. Not on purpose — it just records the wrong thing. A gorgeous pass that sets
-up a wide-open layup counts for nothing if the layup rims out. A brick-headed contested heave counts for
-three if it happens to drop. The stat sheet rewards *outcomes*, and an outcome is three things mashed
-together: the quality of the decision, whether the guy can actually shoot, and luck.
+Not on purpose. It just records the wrong thing. The box score is the stat sheet: who scored, who
+rebounded, who passed. But a beautiful pass that sets up a wide-open layup counts for nothing if the shooter
+bricks it, and a wild, contested heave counts for three if it happens to drop. The stat sheet rewards
+results. And a result is three things mashed together: how good the decision was, whether the
+player can actually shoot, and plain luck.
 
-What I really wanted was the thing chess players have. If you've watched chess online, you know the eval
-bar — that meter on the side that tells you who's winning *right now*, after every move. I wanted that for
-a possession. At this instant, how many points is this trip down the floor worth? And when a player chooses
-to shoot, pass, or drive, how good was that choice — separately from whether it happened to work?
+The part I care about most is the first one, and it's the part you can't see. Whether a player made a good
+decision is invisible. I wanted to know if you could pull it out and measure it, and whether it was even
+real.
 
-So I built it. It's called **PLOT — Points Left On the Table**.
+If you've ever watched chess online, you've seen the thing I wanted. There's a bar along the side of the
+screen that tells you who's winning right now, after every single move. You don't have to know how to play.
+You just read the bar. I wanted that bar for a basketball possession, one trip down the floor. At this
+instant, what is this trip worth? And when a player shoots or passes, how good was the decision, regardless
+of whether it worked?
 
-## What I wanted to measure
-
-The target is the *decision*, not the outcome. So I score every choice by what it was worth **on average**,
-not by what happened that one time. A pass to an open shooter is a good decision whether or not the shooter
-makes it; a forced shot is a bad one even when it goes in. If I graded by the result, I'd just be measuring
-luck again, with extra steps.
-
-Concretely: at each moment a player could shoot or pass, I compare the **best option he had** to the **one
-he took**, in expected points. The gap is the regret — the points left on the table. Add it up over a season
-and you get a per-player number that, in theory, captures something the box score can't: decision quality.
-
-That's the easy part to say. The hard part is earning the right to believe it.
+What I ended up with is PLOT: Points Left On the Table.
 
 ## How I built it
 
-Three pieces sit underneath that one number.
+Building the bar comes first. It's a model that takes a snapshot of the floor, where all ten players and the
+ball are, and predicts how many points the possession will end up producing. The one thing it has to get
+right is honesty: when it says a possession is worth 0.8 points, possessions that look like that one should
+actually average about 0.8. To be sure it isn't just memorizing, I never let it grade a game it learned from.
+Every game is scored by a version of the model trained only on the other games. Even then, the 0.8s come out
+to about 0.8. The honesty holds up on possessions the model has never seen.
 
-**The eval bar.** First I needed "expected points right now." That's a model that looks at all ten players
-and the ball at once — where everyone is, who's open, how the possession has unfolded — and predicts how
-many points this possession will end up scoring. The important property isn't cleverness, it's *honesty*:
-when it says 0.8 points, possessions like that one really should average about 0.8. (They do; I checked,
-on games the model never trained on.)
+The second piece is the measurement itself. Whenever a player can shoot or pass, I compare the best option
+available to him with the one he actually chose, and measure the gap in expected points. That gap is the
+points left on the table. The word that matters is expected: I judge a choice by what it's worth on average,
+not by how it happened to turn out that one time. A pass to an
+open shooter is a good decision whether or not the shot drops. A forced shot is a bad one even when it goes
+in. Grade by the result and you're just measuring luck again.
 
-**The data grind.** This is the unglamorous half. The only NBA tracking data that's ever been public is
-from 2015-16, and only about half a season of it survives in the wild. Turning raw camera coordinates into
-something you can reason about means cutting the game into possessions, figuring out which direction each
-team is attacking, and throwing out the games where the tracking is too garbled to trust. None of that is
-in any tutorial. Most of the work was here.
+There's one trick that makes this work, and it sounds like a bug. When I value the shot a player passed up, I
+use a model that doesn't know who was going to take it. A wide-open shot from the same spot is worth the same
+whether it's Kobe Bryant or Robert Sacre. That's on purpose. It means I'm grading the decision to
+pass up the shot, not the player's jumper. Otherwise I'd just be rediscovering that some guys can shoot.
 
-**The metric.** On top of the eval bar, I value the "best available" shot with a small shot-quality model —
-and, on purpose, I make that model **blind to who's shooting**. A wide-open 18-footer is worth the same
-whether it's a sharpshooter or a center. That sounds like a bug; it's the whole point. It means the metric
-is grading the *decision* to pass it up, not the player's jump shot. Otherwise I'd just be re-discovering
-that some guys can shoot.
+The third piece is the least glamorous of the three, and it isn't a model at all. The only NBA tracking data
+that has ever been public comes from a single season, 2015-16, and only about half of it survives out in the
+wild. What you get is raw camera coordinates: the x and y of all ten players and the ball, twenty-five times
+a second, and almost nothing else. The cameras don't tell you who has the ball, where one possession ends and
+the next begins, or even which basket a team is attacking. I had to rebuild all of that from scratch, then
+throw out the games where the tracking was too garbled to trust. About 208 survived. Cleaning the data took
+longer than building the models that sit on top of it.
 
-And I refused to trust any of it until it cleared a gauntlet. Each stage had to pass a test or I stopped and
-fixed it: is the model calibrated? does the player number *repeat* across the season (a skill, not noise)?
-is it actually different from the box score? and — the one that matters most — does it predict anything
-**real**, or is it just a model nodding along to itself?
+## Does it predict anything real?
 
-## Building it with Claude Code
-
-I should be honest about how this got made, because it's part of the story. I built almost all of it in a
-tight back-and-forth with **Claude Code**, Anthropic's coding agent. It wrote most of the code, ran the
-experiments, did the bookkeeping, drafted the paper, and built the demo you're about to see. That's not me
-being modest — it's genuinely what happened.
-
-My job was the other half: deciding what question to ask, what to trust, and what counts as a real finding.
-The most valuable things I did were *skeptical*. I made it run the one test that actually mattered (does
-this predict real outcomes?), and when an earlier, fancier version of the metric looked great on every
-statistic but quietly failed a reality check, I killed it. The fun of it was getting to spend my attention
-on *judgment* instead of typing — to move at the speed of "what if we tried…" instead of the speed of
-boilerplate.
-
-But here's the part worth saying out loud: an AI collaborator makes it *dangerously* easy to produce
-plausible-looking results. It will happily generate a beautiful chart for a metric that means nothing. So
-the discipline — gating every stage, demanding outcome validity, and reporting the results that *didn't*
-work as loudly as the ones that did — mattered more, not less. The speed is the gift and the trap. The
-honesty has to come from you.
-
-## Does any of this predict reality?
-
-Everything up to here is the model checking itself, and a model that grades itself always looks brilliant.
-So the real question is whether the "points left on the table" predict what actually happens on the floor.
+Here's the problem with everything I've said so far. A model that grades itself always looks brilliant. Of
+course the possessions my model liked scored well; it's the same model doing the liking and the scoring. The
+real question, the only one that counts, is whether the points left on the table predict what actually
+happens on the floor.
 
 There's one decision where I could check that cleanly. When a player is wide open, he either shoots or
-passes. The ones who *shoot* hand me the answer for free — they took the shot, I see the points. So for the
-ones who *passed it up*, I can ask a fair question: did their possessions score less than the players who
-took that same kind of look? I don't have to guess at the road not taken. Real shooters, in the same spot,
-*are* the road not taken.
+passes. The ones who shoot hand me the answer for free: they took the shot, so I see what it was worth. So
+for the ones who passed it up, I can ask a fair question. Did their possessions score less than the players
+who took that same kind of look? I don't have to imagine what that shot would have
+been worth. The players who took it, from the same kind of look, already show me.
 
-They do score less. Across 208 games, passing up an average open look costs about a tenth of a point, and
-passing up a *great* one costs about **a fifth of a point**. Passing up a *bad* look costs nothing — which
-is correct, because declining a bad shot is the smart play. And the better the look you waved off, the more
-it cost you. That last part is the tell: a statistical fluke would be flat across shot quality; a real effect
-ramps up with it, and this ramps up.
+They do score less. Across 208 games, passing up an average open look costs about a tenth of a point.
+Passing up a great one costs about a fifth. Passing up a bad look costs nothing, which is exactly right,
+because turning down a bad shot is the smart play. And the better the look the player waved off, the more it
+cost him. That last part is the tell. A statistical fluke would be flat: it wouldn't care how good the shot
+was. A real effect grows with the quality of the shot. This one grows.
 
-I tried hard to break it and couldn't. It's not just turnovers (it holds when you only count possessions
-that ended in a shot). It's not a data glitch (it holds when you throw out the ambiguous cases). And the
-obvious objection — "maybe he passed because he saw something better" — points the wrong way: if that were
-true, the passers would score *more* afterward. They score *less*. So on average, those passes weren't
-hiding a better play.
+I tried hard to break it and couldn't. It holds when I count only the possessions that ended in a shot, so
+it isn't just turnovers. It holds when I throw out the messy, ambiguous cases. And the obvious objection,
+that the player passed because he saw something even better, points the wrong way: if that were true, the
+passers would score more afterward, not less. They score less.
 
-It's a modest number, and I want to be honest about that. A fifth of a point won't headline SportsCenter.
-But it's a *real* fifth of a point, on a decision nobody was measuring, and it is completely invisible to
-the box score. That was the whole point.
+A fifth of a point is a small number. It won't lead SportsCenter. But it's a real fifth of a point, on a
+decision nobody was measuring, and completely invisible to the box score.
 
 ## The surprise nobody asked for
 
-I assumed the mirror version would work too: when a guy *shoots over* a wide-open teammate, that's a
-mistake, right? Pass to the open man — it's the first thing anyone learns.
+I assumed the opposite rule would hold too. Picture a player with the ball and a teammate standing wide open
+nearby. He takes his own shot instead of making the pass. That's a mistake, right? Pass to the open man is
+the first thing anyone learns.
 
-It doesn't hold up. Shooting over the open teammate actually scored *more*, not fewer, points. After
-staring at it for a while the reason is almost obvious: an "open" man is often open *because the defense
-doesn't respect him*. Passing to the open shooter only helps if the open shooter is a threat, and a lot of
-the time he isn't. So the data quietly refuses to back the oldest instruction in the sport — at least the
-version you can measure from tracking. (I can't fully separate "this is a real basketball truth" from "my
-way of valuing a teammate's hypothetical shot is just too crude," and I say so in the paper.) Either way,
-it's not a read I'd stand behind — and I find that more interesting than if it had simply worked.
+It doesn't hold up. When players took their own shot instead of feeding the open teammate, their possessions
+scored more points, not fewer. After staring at it for a while, the reason is almost obvious: a teammate is
+often open because the defense doesn't respect him. Passing to the open man only helps if the open man can
+actually punish the defense, and a lot of the time he can't. I can't fully separate "this is a real truth
+about basketball" from "my way of valuing the teammate's hypothetical shot is just too crude," and I say so
+in the paper. Either way, the data quietly refuses to back the oldest instruction in the sport, and I find
+that more interesting than if it had simply worked.
 
 ## What I'm not claiming
 
-Because the temptation to oversell this is real:
+It's easy to oversell a result like this, so let me say plainly what it isn't.
 
-- It measures **one kind of decision** well — passing up your own open shot. Not drives, not the read to
-  the open man.
-- The effect is **modest**, as I said.
-- I can rule out a lot of confounds, but I can't rule out that players see things the cameras don't. No
-  observational metric can.
-- And when I push it to the player level — "which players are best and worst at this?" — it gets weak and
-  shaky. The *decision* is real; ranking *individuals* by it is a much harder problem, and I only get a
-  faint signal.
+- It measures exactly one kind of decision: whether to shoot when you're open. Not drives, not passes to
+  other players.
+- The effect is small.
+- I can rule out many other explanations, but not the chance that players see things the cameras miss.
+  Nothing built from camera data can.
+- It works on the decision. It does not yet work on people. When I try to rank players, the signal nearly
+  disappears.
 
-If that list feels long, good. The fastest way to make a sports metric look impressive is to stop checking
-it.
+A long list of limits isn't a bad sign. It's the difference between a number you can trust and one that
+only looks good.
+
+One more thing. I built all of this with Claude Code, an AI coding assistant, in a long, running
+conversation. It wrote all of the code and ran the experiments; my job was to ask the questions and stay
+skeptical. A few years ago a project like this would have taken a small research team months. It took me a
+weekend. The fact that it's now within reach for one person still feels a little unreal.
 
 ## See it yourself
 
-The best part is that you don't have to take my word for any of this. Pick a game, hit play, and watch a
-possession unfold from the real 2015-16 tracking — ten players and the ball, the eval bar rising and falling
-on the left, and a chess.com-style badge (Great / Good / Inaccuracy / Mistake / Blunder) popping up every
-time someone passes up an open look.
+You don't have to take my word for any of this. Pick a game and press play: ten players and the ball move
+across the floor from the real 2015-16 tracking, the eval bar climbs and drops on the side, and a chess-style
+label pops up every time someone passes up an open look.
 
-- **Demo:** [plot-nba.vercel.app](https://plot-nba.vercel.app)
-- **The paper:** [read the full write-up (PDF)](/plot-paper.pdf) — every gate, number, and caveat.
-- **Code:** [github.com/jparker2006/PLOT](https://github.com/jparker2006/PLOT)
+![The PLOT demo replaying a Warriors possession: the eval bar on the left, players moving across the court,
+and a chess-style badge on each passed-up open look.](/plot-demo.gif)
 
-The short version: decision quality in basketball is real, you can measure a slice of it from public data,
-it costs real points, and the box score is blind to it. Just don't let anyone tell you the open man was
+- Demo: [plot-nba.vercel.app](https://plot-nba.vercel.app)
+- The paper: [read the full write-up (PDF)](/plot-paper.pdf), with every test, number, and caveat.
+- Code: [github.com/jparker2006/PLOT](https://github.com/jparker2006/PLOT)
+
+The box score doesn't show everything. Good decisions are worth real, countable points, and bad ones leave
+them on the table. That's the whole idea, and it's why you shouldn't trust anyone who says the open man was
 always the right call.

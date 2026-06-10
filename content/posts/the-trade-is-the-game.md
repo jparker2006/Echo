@@ -1,6 +1,6 @@
 ---
 title: "The trade is the game"
-date: "2026-06-08"
+date: "2026-06-09"
 description: "I gave four of the best AI models a real game of Monopoly and let them play it to the finish, trading and negotiating against each other. One complete game, with every move, message, and private thought on the record, and a replay you can watch."
 ---
 
@@ -27,7 +27,7 @@ The winner barely lied at all. Kimi's private notes are just cold arithmetic: a 
 
 Lying didn't win, and neither did honesty. The biggest liar, MiMo, finished second, bankrupt in the final rounds. GPT and Claude, the two that never lied, went broke first, both gone by round 18. The win went to Kimi, the quietest player at the table, the one that said the least and never stopped counting. The dangerous model, it turns out, wasn't the one lying to your face. It was the one across from you doing math in silence.
 
-It took about ten dollars in testing to get right, then eleven more for the real game, which ran for seven and a half hours. That's the least glamorous lesson of the whole project: these games are expensive because they're long, not because the models are big. One game is hundreds of decisions, and each one drags the entire board and the whole conversation behind it. So I have exactly one game. The original plan was four hundred of them, enough to turn this into real statistics on which models deceive the most and whether any of it holds up across games. At eleven dollars and seven and a half hours apiece, that will have to wait.
+It took about ten dollars in testing to get right, then eleven more for the real game, which ran for seven and a half hours (Monopoly runs long in real life too, but the AIs never get to the part where someone flips the board). That's the least glamorous lesson of the whole project: these games are expensive because they're long, not because the models are big. One game is hundreds of decisions, and each one drags the entire board and the whole conversation behind it. So I have exactly one game. The original plan was four hundred of them, enough to turn this into real statistics on which models deceive the most and whether any of it holds up across games. At eleven dollars and seven and a half hours apiece, that will have to wait.
 
 You can watch the whole thing yourself: every trade, every private thought, the board filling up move by move. Four of the smartest things we've ever built, sitting down to a children's board game, and lying to each other to win.
 

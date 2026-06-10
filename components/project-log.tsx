@@ -1,7 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
+import Link from "next/link";
 import type { Project } from "@/data/projects";
+
+/**
+ * One related link beneath a project. External URLs and static files (e.g. the
+ * paper PDF) open in a new tab via a plain anchor; internal route paths (a demo
+ * page, a blog post) use client-side navigation in the same tab.
+ */
+function ProjectLink({ href, children }: { href: string; children: ReactNode }) {
+  const lastSegment = href.split(/[?#]/)[0].split("/").pop() ?? "";
+  const isExternalOrFile = /^https?:\/\//.test(href) || lastSegment.includes(".");
+  if (isExternalOrFile) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return <Link href={href}>{children}</Link>;
+}
 
 /**
  * One projects list with a single self-rewriting `ls` toggle.
@@ -39,6 +58,12 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
         {projects.map((project) => {
           const collapsible = !project.featured;
           const collapsed = collapsible && !expanded;
+          // Related links, in fixed order: paper · demo · blog post.
+          const links: { id: string; href: string; label: string }[] = [];
+          if (project.paper) links.push({ id: "paper", href: project.paper, label: "paper" });
+          if (project.demo) links.push({ id: "demo", href: project.demo, label: "demo" });
+          if (project.post)
+            links.push({ id: "post", href: `/posts/${project.post}`, label: "blog post" });
           return (
             <li
               key={`${project.year}-${project.name}`}
@@ -64,6 +89,20 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
                       )}
                     </span>
                     <p className="log-desc">{project.description}</p>
+                    {links.length > 0 ? (
+                      <p className="log-links">
+                        {links.map((link, i) => (
+                          <Fragment key={link.id}>
+                            {i > 0 ? (
+                              <span className="log-sep" aria-hidden="true">
+                                ·
+                              </span>
+                            ) : null}
+                            <ProjectLink href={link.href}>{link.label}</ProjectLink>
+                          </Fragment>
+                        ))}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>

@@ -3,13 +3,20 @@
 //   name     – project name
 //   description – one-liner shown beneath the name
 //   url      – optional repo link (the name becomes a coral link when present)
+//   paper    – optional research-paper link (e.g. a PDF in /public), shown first in the links row
+//   demo     – optional live-demo link, shown in the links row
+//   post     – optional related blog-post slug (content/posts/<slug>.md), shown in the links row
 //   featured – show in the default `ls /projects` view (default false)
+// The links row beneath a description renders present links in this order: paper · demo · blog post.
 
 export interface Project {
   year: number;
   name: string;
   description: string;
   url?: string;
+  paper?: string;
+  demo?: string;
+  post?: string;
   featured: boolean;
 }
 
@@ -17,18 +24,33 @@ export interface Project {
 export const projects: Project[] = [
   {
     year: 2026,
-    name: "Snake Eyes",
-    description:
-      "four AI models lie, scheme, and betray their way through a full game of Monopoly — with an interactive replay that shows what each one was privately thinking",
-    url: "/snake-eyes",
+    name: "Neon City",
+    description: "messing around with Fable and /goal",
+    url: "https://github.com/jparker2006/NeonCity",
+    featured: false,
+  },
+  {
+    year: 2026,
+    name: "Space Coaster",
+    description: "testing Fable by one-shotting a rollercoaster in space",
+    url: "https://github.com/jparker2006/Spacecoaster",
+    featured: false,
+  },
+  {
+    year: 2026,
+    name: "Tail",
+    description: "an on-chain study of how a few wallets actually move prediction market prices",
+    url: "https://github.com/jparker2006/Tail",
     featured: true,
   },
   {
     year: 2026,
-    name: "Glox",
+    name: "Snake Eyes",
     description:
-      "a startup that automates the tedious manual work of keeping contractor safety-compliance portals up to date",
-    url: "https://tryglox.com",
+      "four AI models lie, scheme, and betray their way through a full game of Monopoly — with an interactive replay that shows what each one was privately thinking",
+    url: "/snake-eyes",
+    demo: "/snake-eyes",
+    post: "the-trade-is-the-game",
     featured: true,
   },
   {
@@ -37,6 +59,9 @@ export const projects: Project[] = [
     description:
       "a chess-style eval bar for the NBA that measures the points players leave on the table",
     url: "https://github.com/jparker2006/PLOT",
+    paper: "/plot-paper.pdf",
+    demo: "https://plot-nba.vercel.app/",
+    post: "points-left-on-the-table",
     featured: true,
   },
   {
@@ -44,14 +69,14 @@ export const projects: Project[] = [
     name: "BigBotter",
     description: "AI agents lie, scheme, and backstab their way through a Big Brother house",
     url: "https://github.com/jparker2006/BigBotter",
-    featured: true,
+    featured: false,
   },
   {
     year: 2026,
     name: "Get Out",
     description: "partitioned agents coordinate to get out of an escape room",
     url: "https://github.com/jparker2006/Get-Out",
-    featured: true,
+    featured: false,
   },
   {
     year: 2026,
@@ -67,6 +92,14 @@ export const projects: Project[] = [
     description: "an NYT Flashback clone",
     url: "https://github.com/jparker2006/Timeslop",
     featured: false,
+  },
+  {
+    year: 2026,
+    name: "Glox",
+    description:
+      "a startup that automates the tedious manual work of keeping contractor safety-compliance portals up to date",
+    url: "https://tryglox.com",
+    featured: true,
   },
   {
     year: 2025,
@@ -103,7 +136,7 @@ export const projects: Project[] = [
     name: "AdmitAI",
     description: "an AI agent to help students write their college essays and apply",
     url: "https://github.com/jparker2006/AdmitAI",
-    featured: true,
+    featured: false,
   },
   {
     year: 2025,
@@ -254,7 +287,7 @@ export const projects: Project[] = [
     name: "Encrypted Storage",
     description: "an AES-256 encrypted desktop vault with a password manager, contacts, and profiles",
     url: "https://github.com/jparker2006/EncryptedStorage/",
-    featured: true,
+    featured: false,
   },
   {
     year: 2021,

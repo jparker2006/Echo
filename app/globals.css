@@ -511,6 +511,36 @@ code[data-theme] span {
   margin-top: 0.15rem;
 }
 
+/* related links beneath a project — coral, dot-separated, terminal-mono.
+   Mirrors the `ls` toggle's transparent→accent underline-on-hover. */
+.log-links {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82rem;
+}
+
+/* Quiet secondary actions: muted by default so they don't compete with the
+   coral project names, lighting up coral (+ underline) only on hover/focus. */
+.log-links a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: transparent;
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.log-links a:hover,
+.log-links a:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.log-sep {
+  color: var(--muted);
+  margin: 0 0.6ch;
+}
+
 /* stack on narrow screens */
 @media (max-width: 34rem) {
   .log-row {

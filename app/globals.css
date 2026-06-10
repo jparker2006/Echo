@@ -378,8 +378,8 @@ figure[data-rehype-pretty-code-figure] {
   border-radius: 2px;
   padding: 0.95rem 1.05rem;
   overflow-x: auto;
-  font-size: 0.84rem;
-  line-height: 1.6;
+  font-size: 0.78rem;
+  line-height: 1.55;
 }
 
 .post-body pre code {
@@ -394,6 +394,8 @@ figure[data-rehype-pretty-code-figure] {
    The site is always dark, so we always use the dark token set. */
 .post-body pre code [data-line] {
   padding: 0 0.1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 code[data-theme],

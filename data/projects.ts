@@ -17,6 +17,14 @@ export interface Project {
 export const projects: Project[] = [
   {
     year: 2026,
+    name: "Snake Eyes",
+    description:
+      "four AI models lie, scheme, and betray their way through a full game of Monopoly — with an interactive replay that shows what each one was privately thinking",
+    url: "/snake-eyes",
+    featured: true,
+  },
+  {
+    year: 2026,
     name: "Glox",
     description:
       "a startup that automates the tedious manual work of keeping contractor safety-compliance portals up to date",

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /** The "echo" masthead wordmark, plus terminal-style nav. */
-function SiteHeader({ compact = false }: { compact?: boolean }) {
+export function SiteHeader({ compact = false }: { compact?: boolean }) {
   return (
     <header className={`masthead${compact ? " masthead--compact" : ""}`}>
       <Link href="/" className="brand" aria-label="echo — home">

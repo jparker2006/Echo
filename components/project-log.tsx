@@ -1,8 +1,10 @@
 "use client";
 
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import type { Project } from "@/data/projects";
+import { gsap, useGSAP } from "@/components/motion/gsap";
+import { motion, queries } from "@/lib/motion/tokens";
 
 /**
  * One related link beneath a project. External URLs and static files (e.g. the
@@ -34,15 +36,55 @@ function ProjectLink({ href, children }: { href: string; children: ReactNode }) 
 export function ProjectLog({ projects }: { projects: Project[] }) {
   const [expanded, setExpanded] = useState(false);
   const hiddenCount = projects.filter((project) => !project.featured).length;
+  const scope = useRef<HTMLElement>(null);
+
+  // Terminal print-in: the command line + the featured rows fade/rise in
+  // sequentially like stdout, a quick stagger that completes well under 1s.
+  // The hidden `ls -a` rows are handled by the existing CSS toggle (staggered
+  // via --row), so they're left out here. Gated by matchMedia; under reduce
+  // nothing is hidden so there's nothing to do.
+  useGSAP(
+    () => {
+      const el = scope.current;
+      if (!el) return;
+      const items = gsap.utils.toArray<HTMLElement>("[data-print]", el);
+      if (!items.length) return;
+
+      const printIn = (travel: number) =>
+        gsap.fromTo(
+          items,
+          { opacity: 0, y: travel },
+          {
+            opacity: 1,
+            y: 0,
+            duration: motion.durationRow,
+            ease: motion.easeRow,
+            stagger: motion.staggerRow,
+            clearProps: "transform",
+          }
+        );
+
+      const mm = gsap.matchMedia();
+      mm.add(queries.desktop, () => void printIn(motion.travel));
+      mm.add(queries.mobile, () => void printIn(motion.travelMobile));
+      mm.add(queries.reduce, () => {});
+    },
+    { scope }
+  );
+
+  // running index over the collapsible (hidden) rows, so the `ls -a` reveal
+  // cascades top-to-bottom instead of all rows appearing at once.
+  let collapsibleIndex = 0;
 
   return (
-    <section className="fade-up">
+    <section ref={scope}>
       <button
         type="button"
         className="cmd cmd-toggle"
         aria-expanded={expanded}
         aria-controls="project-log"
         onClick={() => setExpanded((open) => !open)}
+        data-print
       >
         <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>{" "}
         <span className="cmd-text">{expanded ? "ls -a /projects" : "ls /projects"}</span>
@@ -58,6 +100,7 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
         {projects.map((project) => {
           const collapsible = !project.featured;
           const collapsed = collapsible && !expanded;
+          const rowIndex = collapsible ? collapsibleIndex++ : 0;
           // Related links, in fixed order: paper · demo · blog post.
           const links: { id: string; href: string; label: string }[] = [];
           if (project.paper) links.push({ id: "paper", href: project.paper, label: "paper" });
@@ -74,9 +117,10 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
               ]
                 .filter(Boolean)
                 .join(" ")}
+              style={collapsible ? ({ "--row": rowIndex } as CSSProperties) : undefined}
             >
               <div className="log-clip" inert={collapsed || undefined}>
-                <div className="log-row">
+                <div className="log-row" data-print={collapsible ? undefined : ""}>
                   <span className="log-year">{project.year}</span>
                   <div className="log-main">
                     <span className="log-name">

@@ -457,6 +457,9 @@ code[data-theme] span {
   display: grid;
   grid-template-rows: 1fr;
   transition: grid-template-rows 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* `ls -a` reveal cascades top-to-bottom like stdout (capped so a long list
+     still finishes quickly). Collapsing snaps with no delay (rule below). */
+  transition-delay: calc(min(var(--row, 0), 14) * 0.03s);
 }
 
 .log-item--collapsible > .log-clip {
@@ -465,10 +468,17 @@ code[data-theme] span {
   transition:
     opacity 0.34s ease,
     transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: calc(min(var(--row, 0), 14) * 0.03s);
 }
 
 .log-item--collapsible.is-collapsed {
   grid-template-rows: 0fr;
+}
+
+/* collapsing back to `ls` is immediate — no staggered delay on the way out */
+.log-item--collapsible.is-collapsed,
+.log-item--collapsible.is-collapsed > .log-clip {
+  transition-delay: 0s;
 }
 
 /* a collapsed row that is immediately followed by a visible row would lose
@@ -628,29 +638,66 @@ code[data-theme] span {
 }
 
 /* ============================================================
-   load animation — staggered fade-up
+   GSAP motion layer
+   Entrances/print-ins are driven by GSAP (see components/motion).
+   These rules only (a) pre-hide entrance targets before the JS
+   runs so there's no flash, and (b) add restrained, desktop-only
+   hover motion. Only opacity + transform are ever touched — no
+   layout properties, zero cumulative layout shift.
    ============================================================ */
 
-.fade-up {
-  animation: fade-up 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  animation-delay: calc(var(--i, 0) * 80ms);
+/* Pre-hide entrance targets. `data-motion` is set on <html> by a tiny
+   inline script ONLY when motion is allowed and JS is on — so with JS off
+   or reduced motion, nothing is ever hidden. GSAP animates these to their
+   natural opacity, leaving an inline opacity:1 that overrides this rule. */
+html[data-motion] [data-reveal],
+html[data-motion] [data-reveal-row],
+html[data-motion] [data-print] {
+  opacity: 0;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
+/* Defensive: even if data-motion were somehow present, reduced motion must
+   never leave content hidden. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion] [data-reveal],
+  html[data-motion] [data-reveal-row],
+  html[data-motion] [data-print] {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* ============================================================
-   respect reduced motion — disable all animation
-   ============================================================ */
+/* thin reading-progress bar, pinned to the very top edge of the post page.
+   Fills left→right via scaleX as the article is scrolled. Information, not
+   decoration — it stays under reduced motion. Sits above the grain overlay. */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 10000;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+  pointer-events: none;
+}
 
+/* Restrained shell-style hover — desktop pointer only. Transform/opacity
+   only; the entrance hands transform back to CSS (clearProps) so these
+   apply cleanly once the element has settled. */
+@media (hover: hover) and (pointer: fine) {
+  .post-item,
+  .log-row {
+    transition: transform 0.18s ease;
+  }
+  .post-item:hover,
+  .log-row:hover {
+    transform: translateX(3px);
+  }
+}
+
+/* respect reduced motion — neutralize any remaining CSS transitions/anims */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -658,5 +705,6 @@ code[data-theme] span {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
   }
 }

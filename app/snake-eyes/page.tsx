@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/chrome";
+import { RevealRoot } from "@/components/motion/reveal-root";
 import { SnakeEyesApp } from "./SnakeEyesApp";
 
 export const metadata: Metadata = {
@@ -12,9 +13,9 @@ export const metadata: Metadata = {
 export default function SnakeEyesPage() {
   return (
     <div className="se-page">
-      <div className="se-page-head">
-        <SiteHeader compact />
-      </div>
+      <RevealRoot className="se-page-head">
+        <SiteHeader />
+      </RevealRoot>
       <SnakeEyesApp />
       <p className="se-back">
         <Link href="/posts/the-trade-is-the-game">← back to the post</Link>

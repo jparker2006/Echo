@@ -16,10 +16,10 @@ export default async function AboutPage() {
   const html = await renderMarkdown(content);
 
   return (
-    <Shell compact>
-      <article className="prose fade-up">
+    <Shell>
+      <article className="prose">
         <Prompt command="cat about.md" />
-        <div className="post-body" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="post-body" data-reveal dangerouslySetInnerHTML={{ __html: html }} />
       </article>
     </Shell>
   );

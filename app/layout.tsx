@@ -34,9 +34,22 @@ export const metadata: Metadata = {
   },
 };
 
+// Set data-motion on <html> before first paint *only* when motion is allowed,
+// so the GSAP layer can pre-hide its entrance targets (opacity:0) without a
+// flash. If JS is off or reduced motion is requested, the attribute is never
+// set and content renders fully visible — never stuck hidden.
+const motionReadyScript = `(function(){try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.setAttribute("data-motion","")}}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${serif.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: motionReadyScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

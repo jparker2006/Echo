@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { RevealRoot } from "@/components/motion/reveal-root";
 
-/** The "echo" masthead wordmark, plus terminal-style nav. */
-export function SiteHeader({ compact = false }: { compact?: boolean }) {
+/** The shared site header: small "echo" wordmark top-left (links home),
+    terminal-style nav top-right, on one line. Identical on every page. */
+export function SiteHeader() {
   return (
-    <header className={`masthead${compact ? " masthead--compact" : ""}`}>
+    <header className="masthead masthead--compact" data-reveal>
       <Link href="/" className="brand" aria-label="echo — home">
         <span className="brand-word">echo</span>
       </Link>
@@ -25,7 +27,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
     "~" path is muted, the "$" sigil is amber, the command is cream. */
 export function Prompt({ command }: { command: string }) {
   return (
-    <p className="cmd">
+    <p className="cmd" data-reveal>
       <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>{" "}
       <span className="cmd-text">{command}</span>
     </p>
@@ -33,17 +35,11 @@ export function Prompt({ command }: { command: string }) {
 }
 
 /** Centered reading column shared by every page: header + content. */
-export function Shell({
-  children,
-  compact = false,
-}: {
-  children: ReactNode;
-  compact?: boolean;
-}) {
+export function Shell({ children }: { children: ReactNode }) {
   return (
-    <div className="wrap">
-      <SiteHeader compact={compact} />
+    <RevealRoot>
+      <SiteHeader />
       {children}
-    </div>
+    </RevealRoot>
   );
 }

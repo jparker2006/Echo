@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell } from "@/components/chrome";
+import { ReadingProgress } from "@/components/motion/reading-progress";
 
 // Only render posts that exist on disk; unknown slugs 404.
 export const dynamicParams = false;
@@ -44,15 +45,16 @@ export default async function PostPage({
   const html = await renderMarkdown(post.content);
 
   return (
-    <Shell compact>
-      <article className="prose fade-up">
-        <div className="post-meta">
+    <Shell>
+      <ReadingProgress />
+      <article className="prose">
+        <div className="post-meta" data-reveal>
           <span className="post-date">{formatDate(post.date)}</span>
           {post.tags && post.tags.length > 0 ? (
             <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
           ) : null}
         </div>
-        <h1 className="post-h1">{post.title}</h1>
+        <h1 className="post-h1" data-reveal>{post.title}</h1>
         <div className="post-body" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
       <p className="back">

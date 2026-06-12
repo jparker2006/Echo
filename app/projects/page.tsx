@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function ProjectsPage() {
   return (
-    <Shell compact>
+    <Shell>
       <ProjectLog projects={projects} />
     </Shell>
   );

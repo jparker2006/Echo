@@ -280,19 +280,31 @@ main:focus {
   color: var(--ink);
 }
 
+.section-cmd,
+.section-aside {
+  white-space: nowrap;
+}
+
 .section-rule {
   flex: 1;
+  min-width: 1.5rem;
   height: 1px;
   background-image: var(--dots);
 }
 
 .section-aside {
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
+/* padded out to a 44px touch target without moving the rule */
 .section-aside a {
+  display: inline-block;
+  padding: 0.8rem 0;
+  margin: -0.8rem 0;
   color: var(--muted);
   text-decoration: none;
+  transition: color 0.18s ease;
 }
 
 .section-aside a:hover {
@@ -477,31 +489,48 @@ main:focus {
 }
 
 .post-item {
-  padding: 1.25rem 0;
   background-image: var(--dots);
   background-size: 100% 1px;
   background-position: bottom;
   background-repeat: no-repeat;
 }
 
-.post-item:first-child {
-  padding-top: 0;
+/* one line per post: date rail, title, read time flush right.
+   The whole row is the link (see .post-title a::after). */
+.post-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr) auto;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+  padding: 1.75rem 0;
 }
 
-/* one line per post: date rail, then the title */
-.post-main {
-  display: grid;
-  grid-template-columns: 13rem minmax(0, 1fr);
-  gap: 0.35rem 1.5rem;
-  align-items: baseline;
+.post-item:first-child .post-main {
+  padding-top: 1rem;
+}
+
+.post-main .post-date {
+  transition: color 0.18s ease;
+}
+
+.post-main .post-read {
+  color: var(--dim);
+  text-align: right;
+}
+
+.post-main:hover .post-date,
+.post-main:focus-within .post-date {
+  color: var(--ink-2);
 }
 
 .post-title {
   font-family: var(--sans);
   font-weight: 500;
-  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
   line-height: 1.15;
   letter-spacing: -0.03em;
+  text-wrap: balance;
 }
 
 .post-title a {
@@ -513,8 +542,27 @@ main:focus {
   transition: text-decoration-color 0.18s ease;
 }
 
-.post-title a:hover {
+/* stretch the title link over the full row: one big target, one tab stop.
+   It bleeds a little sideways so the focus ring clears the text. */
+.post-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0 -0.75rem;
+  border-radius: 2px;
+}
+
+.post-main:hover .post-title a,
+.post-title a:focus-visible {
   text-decoration-color: var(--lime);
+}
+
+/* the focus ring wraps the whole row, not just the title text */
+.post-title a:focus-visible {
+  outline: none;
+}
+
+.post-title a:focus-visible::after {
+  outline: 2px solid var(--lime);
 }
 
 .project-grid {
@@ -1212,7 +1260,15 @@ code[data-theme] span {
     line-clamp: 2;
   }
   .post-main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 1.4rem 0;
+  }
+  .post-main .post-read {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .post-title {
+    grid-column: 1 / -1;
   }
 }
 

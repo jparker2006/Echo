@@ -56,14 +56,11 @@ export default function Home() {
               <div className="post-main">
                 <p className="post-date">
                   <time dateTime={post.date}>{formatDate(post.date)}</time>
-                  <span className="kicker-sep" aria-hidden="true">
-                    /
-                  </span>
-                  {post.minutes} min
                 </p>
                 <h3 className="post-title">
                   <Link href={`/posts/${post.slug}`}>{post.title}</Link>
                 </h3>
+                <p className="post-date post-read">{post.minutes} min</p>
               </div>
             </li>
           ))}

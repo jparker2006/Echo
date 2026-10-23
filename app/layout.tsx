@@ -48,8 +48,10 @@ export const viewport: Viewport = {
 // Set data-motion on <html> before first paint *only* when motion is allowed,
 // so the GSAP layer can pre-hide its entrance targets (opacity:0) without a
 // flash. If JS is off or reduced motion is requested, the attribute is never
-// set and content renders fully visible — never stuck hidden.
-const motionReadyScript = `(function(){try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.setAttribute("data-motion","")}}catch(e){}})();`;
+// set and content renders fully visible — never stuck hidden. If the JS bundle
+// never arrives (blocked, failed, very slow), the attribute is dropped after
+// 3s so the pre-hidden content shows anyway.
+const motionReadyScript = `(function(){try{if(!matchMedia("(prefers-reduced-motion: reduce)").matches){var h=document.documentElement;h.setAttribute("data-motion","");setTimeout(function(){if(!h.hasAttribute("data-motion-live"))h.removeAttribute("data-motion")},3000)}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

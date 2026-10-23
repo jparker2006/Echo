@@ -12,7 +12,7 @@ export const motion = {
   travelMobile: 6,
 
   /** entrance duration, seconds */
-  duration: 0.45,
+  duration: 0.5,
   /** the terminal print-in of a single projects row */
   durationRow: 0.34,
 
@@ -22,13 +22,15 @@ export const motion = {
   staggerRow: 0.045,
 
   /** easing — kept in the power2/power3 out family, no bounce/elastic */
-  ease: "power2.out",
+  ease: "power3.out",
   easeRow: "power3.out",
 } as const;
 
 /** matchMedia condition strings — one branch each for desktop, mobile, reduce. */
 export const queries = {
   desktop: "(prefers-reduced-motion: no-preference) and (min-width: 641px)",
-  mobile: "(prefers-reduced-motion: no-preference) and (max-width: 640px)",
+  // 640.98 rather than 640, so fractional widths (zoom, odd DPRs) can't fall
+  // between the two branches and leave pre-hidden content unrevealed
+  mobile: "(prefers-reduced-motion: no-preference) and (max-width: 640.98px)",
   reduce: "(prefers-reduced-motion: reduce)",
 } as const;

@@ -16,7 +16,9 @@ export default function SnakeEyesPage() {
       <RevealRoot className="se-page-head">
         <SiteHeader />
       </RevealRoot>
-      <SnakeEyesApp />
+      <main id="main" tabIndex={-1}>
+        <SnakeEyesApp />
+      </main>
       <p className="se-back">
         <Link href="/posts/the-trade-is-the-game">← back to the post</Link>
       </p>

@@ -13,6 +13,8 @@ export interface PostMeta {
   tags?: string[];
   /** A short, plain-text excerpt for the home list and RSS. */
   excerpt: string;
+  /** Estimated reading time in whole minutes (~230 words per minute). */
+  minutes: number;
 }
 
 export interface Post extends PostMeta {
@@ -66,6 +68,7 @@ export function getPostBySlug(slug: string): Post {
       typeof data.description === "string" && data.description.length > 0
         ? data.description
         : deriveExcerpt(content),
+    minutes: Math.max(1, Math.round(content.split(/\s+/).filter(Boolean).length / 230)),
     content,
   };
 }

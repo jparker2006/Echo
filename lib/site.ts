@@ -5,6 +5,6 @@ export const site = {
     "A terminal-flavored personal blog — notes on code, craft, and the command line.",
   // Used for absolute URLs in metadata and the RSS feed.
   // Set SITE_URL in the environment for production; otherwise this default is used.
-  url: process.env.SITE_URL ?? "https://echo.example.com",
+  url: process.env.SITE_URL ?? "https://jhparker.vercel.app",
   author: "Jake Parker",
 };

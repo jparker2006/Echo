@@ -77,7 +77,7 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
   let collapsibleIndex = 0;
 
   return (
-    <section ref={scope}>
+    <section ref={scope} className="project-section">
       <button
         type="button"
         className="cmd cmd-toggle"

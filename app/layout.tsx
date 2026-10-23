@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Newsreader, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Newsreader, JetBrains_Mono } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -8,6 +8,12 @@ const serif = Newsreader({
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-serif",
+});
+
+const sans = Geist({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
 });
 
 const mono = JetBrains_Mono({
@@ -34,6 +40,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#09090d",
+  colorScheme: "dark",
+};
+
 // Set data-motion on <html> before first paint *only* when motion is allowed,
 // so the GSAP layer can pre-hide its entrance targets (opacity:0) without a
 // flash. If JS is off or reduced motion is requested, the attribute is never
@@ -44,13 +55,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${serif.variable} ${mono.variable}`}
+      className={`${sans.variable} ${serif.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: motionReadyScript }} />
       </head>
-      <body>{children}</body>
+      <body id="top">{children}</body>
     </html>
   );
 }

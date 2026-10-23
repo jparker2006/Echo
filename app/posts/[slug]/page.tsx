@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
+import { getAllPosts, getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell } from "@/components/chrome";
-import { ReadingProgress } from "@/components/motion/reading-progress";
+import { ReadingRocket } from "@/components/motion/reading-rocket";
+import { Decode } from "@/components/motion/decode";
 
 // Only render posts that exist on disk; unknown slugs 404.
 export const dynamicParams = false;
@@ -44,19 +45,58 @@ export default async function PostPage({
   const post = getPostBySlug(slug);
   const html = await renderMarkdown(post.content);
 
+  // posts are newest-first, so the "newer" neighbor sits one index earlier
+  const all = getAllPosts();
+  const index = all.findIndex((p) => p.slug === slug);
+  const newer = index > 0 ? all[index - 1] : undefined;
+  const older = index >= 0 && index < all.length - 1 ? all[index + 1] : undefined;
+
   return (
     <Shell>
-      <ReadingProgress />
-      <article className="prose">
-        <div className="post-meta" data-reveal>
-          <span className="post-date">{formatDate(post.date)}</span>
-          {post.tags && post.tags.length > 0 ? (
-            <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
+      <ReadingRocket />
+      <article className="article">
+        <header className="article-head">
+          <p className="kicker" data-reveal>
+            <Link href="/">posts</Link>
+            <span className="kicker-sep" aria-hidden="true">
+              /
+            </span>
+            <span className="kicker-file">{post.slug}.md</span>
+          </p>
+          <h1 className="post-h1" data-reveal>
+            <Decode text={post.title} />
+          </h1>
+          {post.description ? (
+            <p className="article-dek" data-reveal>
+              {post.description}
+            </p>
           ) : null}
-        </div>
-        <h1 className="post-h1" data-reveal>{post.title}</h1>
-        <div className="post-body" dangerouslySetInnerHTML={{ __html: html }} />
+          <p className="post-meta" data-reveal>
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
+            <span>{post.minutes} min read</span>
+            {post.tags && post.tags.length > 0 ? (
+              <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
+            ) : null}
+          </p>
+        </header>
+        <div className="prose post-body" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
+      <nav className="article-foot" aria-label="More posts">
+        {older ? (
+          <Link href={`/posts/${older.slug}`} className="pager pager--prev">
+            <span className="pager-label">← older</span>
+            <span className="pager-title">{older.title}</span>
+          </Link>
+        ) : (
+          <span />
+        )}
+        {newer ? (
+          <Link href={`/posts/${newer.slug}`} className="pager pager--next">
+            <span className="pager-label">newer →</span>
+            <span className="pager-title">{newer.title}</span>
+          </Link>
+        ) : null}
+      </nav>
       <p className="back">
         <Link href="/">← cd ..</Link>
       </p>

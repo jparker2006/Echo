@@ -1,8 +1,9 @@
 # echo
 
 A small, terminal-flavored personal blog built with Next.js (App Router). Posts
-are plain Markdown files, rendered statically, with syntax-highlighted code and a
-warm cream-and-rust palette that adapts to light and dark mode.
+are plain Markdown files, rendered statically, with syntax-highlighted code, a
+dark near-black palette with purple and lime accents, and a live 3D ASCII planet
+on the home page.
 
 ## Run locally
 

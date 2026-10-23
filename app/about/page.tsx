@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getAbout } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell, Prompt } from "@/components/chrome";
+import { Decode } from "@/components/motion/decode";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { title } = getAbout();
@@ -12,14 +13,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const { content } = getAbout();
+  const { title, content } = getAbout();
   const html = await renderMarkdown(content);
 
   return (
     <Shell>
-      <article className="prose">
-        <Prompt command="cat about.md" />
-        <div className="post-body" data-reveal dangerouslySetInnerHTML={{ __html: html }} />
+      <article className="article">
+        <header className="page-head">
+          <Prompt command="cat about.md" />
+          <h1 className="page-title" data-reveal>
+            <Decode text={title} />
+          </h1>
+        </header>
+        <div className="prose post-body" data-reveal dangerouslySetInnerHTML={{ __html: html }} />
       </article>
     </Shell>
   );

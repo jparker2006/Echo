@@ -1,22 +1,27 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { RevealRoot } from "@/components/motion/reveal-root";
+import { NavLinks } from "@/components/nav-links";
 
-/** The shared site header: small "echo" wordmark top-left (links home),
+/** The shared site header: "echo" wordmark top-left (links home),
     terminal-style nav top-right, on one line. Identical on every page. */
 export function SiteHeader() {
   return (
-    <header className="masthead masthead--compact" data-reveal>
+    <header className="masthead" data-reveal>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <Link href="/" className="brand" aria-label="echo — home">
         <span className="brand-word">echo</span>
+        <span className="brand-cursor" aria-hidden="true">
+          _
+        </span>
       </Link>
       <nav className="nav" aria-label="Primary">
         <span className="prompt" aria-hidden="true">
           <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>
         </span>
-        <Link href="/">cd /posts</Link>
-        <Link href="/projects">cd /projects</Link>
-        <Link href="/about">cat about.md</Link>
+        <NavLinks />
       </nav>
     </header>
   );
@@ -24,7 +29,7 @@ export function SiteHeader() {
 
 /** A terminal command line: `~ $ <command>`.
     Shared across pages so the prompt styling stays identical:
-    "~" path is muted, the "$" sigil is amber, the command is cream. */
+    "~" path is muted, the "$" sigil is lime, the command is off-white. */
 export function Prompt({ command }: { command: string }) {
   return (
     <p className="cmd" data-reveal>
@@ -34,12 +39,50 @@ export function Prompt({ command }: { command: string }) {
   );
 }
 
-/** Centered reading column shared by every page: header + content. */
+/** Mono section heading with a dotted rule and an optional right-hand note,
+    e.g. `ls /posts ··········· 2 posts`. */
+export function SectionHead({
+  id,
+  command,
+  aside,
+}: {
+  id?: string;
+  command: string;
+  aside?: ReactNode;
+}) {
+  return (
+    <h2 className="section-head" id={id} data-reveal>
+      <span className="section-cmd">
+        <span className="cmd-sigil">$</span> {command}
+      </span>
+      <span className="section-rule" aria-hidden="true" />
+      {aside ? <span className="section-aside">{aside}</span> : null}
+    </h2>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="site-foot">
+      <span className="foot-brand">echo</span>
+      <nav className="foot-links" aria-label="Elsewhere">
+        <a href="/rss.xml">rss</a>
+        <a href="https://github.com/jparker2006">github</a>
+        <a href="#top">top ↑</a>
+      </nav>
+    </footer>
+  );
+}
+
+/** Page frame shared by every page: header + main content + footer. */
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <RevealRoot>
       <SiteHeader />
-      {children}
+      <main id="main" tabIndex={-1}>
+        {children}
+      </main>
+      <SiteFooter />
     </RevealRoot>
   );
 }

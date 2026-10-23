@@ -366,44 +366,67 @@ main:focus {
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
   align-items: center;
   gap: clamp(1.5rem, 4vw, 3.5rem);
-  min-height: min(44rem, calc(100dvh - 6rem));
-  padding: clamp(2rem, 5vw, 4rem) 0 clamp(3rem, 6vw, 5rem);
+  /* fill the first viewport below the masthead, leaving just the
+     `ls /posts` rule visible above the fold as a horizon line (66vw keeps
+     tall tablets from opening a void under the art) */
+  min-height: clamp(34rem, min(100svh - 10rem, 66vw), 50rem);
+  padding: clamp(1rem, 3vh, 2.5rem) 0 clamp(2.5rem, 7vh, 5rem);
   isolation: isolate;
 }
 
-/* a faint starfield behind the whole hero, drifting slowly sideways */
+/* a faint starfield behind the whole hero: three layers on co-prime tiles
+   so no grid shows, drifting sideways at different speeds for depth (each
+   layer moves one tile per loop, so bigger tiles = nearer, faster stars).
+   An elliptical mask gathers it around the planet and fades it out before
+   the post list. */
 .hero::before {
+  --far: 311px 257px;
+  --mid: 443px 367px;
+  --near: 613px 491px;
   content: "";
   position: absolute;
   inset: 0 calc(-1 * var(--gutter));
   z-index: -1;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.7;
   background-image:
-    radial-gradient(1px 1px at 12% 18%, var(--muted) 50%, transparent 51%),
-    radial-gradient(1px 1px at 33% 72%, var(--dim) 50%, transparent 51%),
-    radial-gradient(1px 1px at 52% 34%, var(--dim) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 71% 12%, var(--ink-2) 50%, transparent 51%),
-    radial-gradient(1px 1px at 86% 58%, var(--dim) 50%, transparent 51%),
-    radial-gradient(1px 1px at 22% 46%, var(--hairline-2) 50%, transparent 51%),
-    radial-gradient(1px 1px at 61% 88%, var(--muted) 50%, transparent 51%),
-    radial-gradient(1px 1px at 94% 82%, var(--hairline-2) 50%, transparent 51%);
-  background-size: 420px 300px;
-  mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 80%, transparent);
+    /* far: tiny, dim, dense */
+    radial-gradient(1px 1px at 7% 23%, var(--dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 29% 71%, var(--hairline-2) 50%, transparent 51%),
+    radial-gradient(1px 1px at 52% 8%, var(--dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 66% 49%, var(--hairline-2) 50%, transparent 51%),
+    radial-gradient(1px 1px at 91% 86%, var(--dim) 50%, transparent 51%),
+    /* mid */
+    radial-gradient(1px 1px at 14% 58%, var(--muted) 50%, transparent 51%),
+    radial-gradient(1px 1px at 43% 31%, var(--dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 71% 93%, var(--dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 84% 12%, var(--muted) 50%, transparent 51%),
+    /* near: sparse, brighter */
+    radial-gradient(1.5px 1.5px at 23% 19%, var(--ink-2) 50%, transparent 51%),
+    radial-gradient(1px 1px at 58% 74%, var(--ink-2) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 41%, var(--muted) 50%, transparent 51%);
+  background-size:
+    var(--far), var(--far), var(--far), var(--far), var(--far),
+    var(--mid), var(--mid), var(--mid), var(--mid),
+    var(--near), var(--near), var(--near);
+  mask-image: radial-gradient(ellipse 70% 72% at 62% 48%, #000 35%, transparent 100%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .hero::before {
-    animation: starfield 120s linear infinite;
+    animation: starfield 160s linear infinite;
   }
 }
 
 @keyframes starfield {
   to {
-    background-position: -420px 0;
+    background-position:
+      -311px 0, -311px 0, -311px 0, -311px 0, -311px 0,
+      -443px 0, -443px 0, -443px 0, -443px 0,
+      -613px 0, -613px 0, -613px 0;
   }
 }
 
@@ -524,6 +547,13 @@ main:focus {
 .hero-art {
   container-type: inline-size;
   min-width: 0;
+  /* let the planet run into the right gutter so it reads as a scene,
+     not a boxed illustration */
+  margin-right: calc(-1 * var(--gutter));
+  /* on short landscape screens, shrink the planet to fit the fold */
+  justify-self: end;
+  width: calc(100% + var(--gutter));
+  max-width: calc((100svh - 14rem) * 48 / 37.8);
 }
 
 .ascii-scene {
@@ -1559,14 +1589,19 @@ code[data-theme] span {
 @media (max-width: 48rem) {
   .hero {
     grid-template-columns: 1fr;
-    padding-top: 2rem;
-    gap: 1.5rem;
-  }
-  .hero {
+    align-content: start;
     min-height: 0;
+    padding: 0.5rem 0 3.5rem;
+    gap: 1.25rem;
+  }
+  .hero::before {
+    mask-image: radial-gradient(ellipse 90% 60% at 50% 32%, #000 40%, transparent 100%);
   }
   .hero-art {
     order: -1;
+    justify-self: stretch;
+    width: auto;
+    max-width: none;
     margin-inline: calc(-1 * var(--gutter));
   }
 }

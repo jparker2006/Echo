@@ -586,6 +586,46 @@ main:focus {
   letter-spacing: -0.045em;
 }
 
+/* about: same head, closed off with the dotted rule a post uses */
+.about-head {
+  margin-bottom: 2.5rem;
+  background-image: var(--dots);
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+/* the opening line reads as a lede */
+.about-body > p:first-child {
+  font-size: 1.45em;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* the closing contact line signs off in mono, like a .md footer */
+.about-body > p:last-child {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  background-image: var(--dots);
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.about-body > p:last-child a {
+  display: inline-block;
+  padding: 0.7rem 0;
+  margin: -0.7rem 0.4ch;
+  color: var(--ink-2);
+}
+
+.about-body > p:last-child a:first-child {
+  margin-left: 0;
+}
+
 .article {
   max-width: var(--measure);
   margin: 0 auto;
@@ -910,14 +950,19 @@ code[data-theme] span {
   padding-top: 0;
 }
 
+/* a new year opens with a little extra air, so the log reads in chapters */
+.log-item[data-year-start]:not(:first-child) > .log-clip {
+  padding-top: 1rem;
+}
+
 /* one row per project — year rail on the left, name + one-liner on the right,
-   a dotted hairline under each */
+   a dotted hairline under each. The year only prints when it changes. */
 .log-row {
   display: grid;
   grid-template-columns: 4rem 1fr;
   align-items: baseline;
   column-gap: 1.5rem;
-  padding: 1.25rem 0;
+  padding: 1rem 0;
   background-image: var(--dots);
   background-size: 100% 1px;
   background-position: bottom;
@@ -960,14 +1005,19 @@ code[data-theme] span {
   transform: translateY(-6px);
 }
 
+.log-row .log-year {
+  color: var(--ink-2);
+}
+
 .log-main {
+  grid-column: -2; /* always the last column, even when the year is sr-only */
   min-width: 0; /* let long one-liners wrap instead of overflowing */
 }
 
 .log-name {
   font-family: var(--sans);
   font-weight: 500;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   letter-spacing: -0.02em;
   line-height: 1.2;
   color: var(--ink); /* plain off-white when there's no link */
@@ -986,21 +1036,41 @@ code[data-theme] span {
   text-decoration-color: var(--lime);
 }
 
+/* a small arrow marks names that open the repo; lime on hover/focus */
+.log-ext {
+  display: inline-block;
+  margin-left: 0.3em;
+  font-family: var(--mono);
+  font-size: 0.75em;
+  color: var(--dim);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.log-name a:hover .log-ext,
+.log-name a:focus-visible .log-ext {
+  color: var(--lime);
+  transform: translate(1px, -1px);
+}
+
 .log-desc {
   color: var(--ink-2);
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.5;
-  margin-top: 0.3rem;
+  margin-top: 0.2rem;
 }
 
 /* related links beneath a project — mono, dot-separated, quiet until hovered */
 .log-links {
-  margin-top: 0.6rem;
+  margin-top: 0.35rem;
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
+/* padding grows the hit area toward 44px; the negative margin keeps the row tight */
 .log-links a {
+  display: inline-block;
+  padding: 0.7rem 0.25rem;
+  margin: -0.7rem -0.25rem;
   color: var(--muted);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -1070,6 +1140,29 @@ code[data-theme] span {
 .cmd-toggle:hover .cmd-hint,
 .cmd-toggle:focus-visible .cmd-hint {
   color: var(--ink);
+}
+
+/* the count reads as a control: a faint bracket that firms up on hover */
+.cmd-toggle .cmd-hint {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--hairline-2);
+  border-radius: 2px;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.cmd-toggle:hover .cmd-hint,
+.cmd-toggle:focus-visible .cmd-hint {
+  border-color: var(--lime);
+}
+
+/* the same toggle again at the end of the expanded list */
+.cmd-toggle--end {
+  margin: 1rem 0 0;
+}
+
+.cmd-toggle--end .cmd-hint {
+  margin-left: 0;
 }
 
 /* ============================================================
@@ -1166,7 +1259,7 @@ code[data-theme] span {
   }
   .log-row {
     grid-template-columns: 1fr;
-    row-gap: 0.25rem;
+    row-gap: 0.15rem;
   }
   .article-foot {
     grid-template-columns: 1fr;

@@ -37,6 +37,7 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
   const [expanded, setExpanded] = useState(false);
   const hiddenCount = projects.filter((project) => !project.featured).length;
   const scope = useRef<HTMLElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
 
   // Terminal print-in: the command line + the featured rows fade/rise in
   // sequentially like stdout, a quick stagger that completes well under 1s.
@@ -75,10 +76,22 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
   // running index over the collapsible (hidden) rows, so the `ls -a` reveal
   // cascades top-to-bottom instead of all rows appearing at once.
   let collapsibleIndex = 0;
+  // show each year once, on the first row of that year that's on screen:
+  // in `ls` that's the first featured row, in `ls -a` the first row overall.
+  const seenAll = new Set<number>();
+  const seenFeatured = new Set<number>();
+
+  // the bottom "show less" collapses and returns focus to the top toggle,
+  // so keyboard users aren't stranded at the end of a list that just shrank
+  const collapseFromEnd = () => {
+    setExpanded(false);
+    toggle.current?.focus();
+  };
 
   return (
     <section ref={scope} className="project-section">
       <button
+        ref={toggle}
         type="button"
         className="cmd cmd-toggle"
         aria-expanded={expanded}
@@ -101,6 +114,11 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
           const collapsible = !project.featured;
           const collapsed = collapsible && !expanded;
           const rowIndex = collapsible ? collapsibleIndex++ : 0;
+          const firstOfYear = !seenAll.has(project.year);
+          const firstFeaturedOfYear = project.featured && !seenFeatured.has(project.year);
+          seenAll.add(project.year);
+          if (project.featured) seenFeatured.add(project.year);
+          const yearStart = expanded ? firstOfYear : firstFeaturedOfYear;
           // Related links, in fixed order: paper · demo · blog post.
           const links: { id: string; href: string; label: string }[] = [];
           if (project.paper) links.push({ id: "paper", href: project.paper, label: "paper" });
@@ -118,15 +136,20 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
                 .filter(Boolean)
                 .join(" ")}
               style={collapsible ? ({ "--row": rowIndex } as CSSProperties) : undefined}
+              data-year-start={yearStart || undefined}
             >
               <div className="log-clip" inert={collapsed || undefined}>
                 <div className="log-row" data-print={collapsible ? undefined : ""}>
-                  <span className="log-year">{project.year}</span>
+                  {/* repeated years stay in the DOM for screen readers, visually hidden */}
+                  <span className={yearStart ? "log-year" : "log-year sr-only"}>{project.year}</span>
                   <div className="log-main">
                     <span className="log-name">
                       {project.url ? (
                         <a href={project.url} target="_blank" rel="noreferrer">
                           {project.name}
+                          <span className="log-ext" aria-hidden="true">
+                            ↗
+                          </span>
                         </a>
                       ) : (
                         project.name
@@ -154,6 +177,23 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
           );
         })}
       </ol>
+
+      {expanded ? (
+        <button
+          type="button"
+          className="cmd cmd-toggle cmd-toggle--end"
+          aria-expanded={expanded}
+          aria-controls="project-log"
+          onClick={collapseFromEnd}
+        >
+          <span className="cmd-hint">
+            <span className="cmd-caret" aria-hidden="true">
+              ▴
+            </span>{" "}
+            show less
+          </span>
+        </button>
+      ) : null}
     </section>
   );
 }

@@ -77,25 +77,75 @@ export default function Home() {
           aside={<Link href="/projects">all {projects.length} →</Link>}
         />
         <ul className="project-grid">
-          {picks.map((project) => (
-            <li key={project.name} className="project-card" data-reveal-row>
-              <p className="post-date">{project.year}</p>
-              <h3 className="project-card-name">
-                {project.url ? (
-                  project.url.startsWith("/") ? (
-                    <Link href={project.url}>{project.name}</Link>
+          {picks.map((project) => {
+            // external URLs and static files open in a new tab; app routes stay in-tab
+            const isFile = (href: string) => /^https?:\/\//.test(href) || /\.\w+$/.test(href);
+            // the name links to the primary URL; the row below holds the rest,
+            // in the /projects order (paper · demo · blog post), minus duplicates
+            const links = [
+              { label: "paper", href: project.paper },
+              { label: "demo", href: project.demo },
+              { label: "blog post", href: project.post && `/posts/${project.post}` },
+            ].filter(
+              (link): link is { label: string; href: string } =>
+                Boolean(link.href) && link.href !== project.url
+            );
+            const where = project.url
+              ? project.url.includes("github.com")
+                ? "github"
+                : project.url.startsWith("/")
+                  ? "demo"
+                  : new URL(project.url).hostname
+              : null;
+            return (
+              <li key={project.name} className="project-card" data-reveal-row>
+                <p className="post-date project-card-meta">
+                  {project.year}
+                  {where ? (
+                    <>
+                      <span className="kicker-sep" aria-hidden="true">
+                        /
+                      </span>
+                      {where}
+                    </>
+                  ) : null}
+                </p>
+                <h3 className="project-card-name">
+                  {project.url ? (
+                    isFile(project.url) ? (
+                      <a href={project.url} target="_blank" rel="noreferrer">
+                        {project.name}
+                        <span className="project-card-ext" aria-hidden="true">
+                          ↗
+                        </span>
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    ) : (
+                      <Link href={project.url}>{project.name}</Link>
+                    )
                   ) : (
-                    <a href={project.url} target="_blank" rel="noreferrer">
-                      {project.name}
-                    </a>
-                  )
-                ) : (
-                  project.name
-                )}
-              </h3>
-              <p className="project-card-desc">{project.description}</p>
-            </li>
-          ))}
+                    project.name
+                  )}
+                </h3>
+                <p className="project-card-desc">{project.description}</p>
+                {links.length ? (
+                  <p className="project-card-links">
+                    {links.map((link) =>
+                      isFile(link.href) ? (
+                        <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link key={link.label} href={link.href}>
+                          {link.label}
+                        </Link>
+                      )
+                    )}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </section>
     </Shell>

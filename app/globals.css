@@ -526,14 +526,42 @@ main:focus {
   border-top: 1px solid var(--hairline);
 }
 
+/* the whole cell is the hit area (the name link stretches over it); the
+   links row sits above that layer and is pinned to the bottom so rows align */
 .project-card {
-  padding: 1.5rem 1.5rem 1.75rem 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.5rem 1.5rem 0;
   border-bottom: 1px solid var(--hairline);
 }
 
 .project-card + .project-card {
   padding-left: 1.5rem;
   border-left: 1px solid var(--hairline);
+}
+
+/* a short lime tick on the top rule marks the hovered / focused card */
+.project-card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 2.5rem;
+  height: 2px;
+  background: var(--lime);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.project-card + .project-card::before {
+  left: 1.5rem;
+}
+
+.project-card:hover::before,
+.project-card:focus-within::before {
+  transform: scaleX(1);
 }
 
 .project-card-name {
@@ -553,20 +581,71 @@ main:focus {
   transition: text-decoration-color 0.18s ease;
 }
 
-.project-card-name a:hover {
+.project-card-name a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.project-card:hover .project-card-name a,
+.project-card-name a:focus-visible {
   text-decoration-color: var(--lime);
 }
 
-/* less text: two lines at most on the home page; the full line is on /projects */
+.project-card-ext {
+  margin-left: 0.3em;
+  font-family: var(--mono);
+  font-size: 0.75em;
+  color: var(--dim);
+  transition: color 0.18s ease;
+}
+
+.project-card:hover .project-card-ext,
+.project-card-name a:focus-visible .project-card-ext {
+  color: var(--lime);
+}
+
+/* less text: clamped on the home page; the full line is on /projects */
 .project-card-desc {
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
+}
+
+/* paper · demo · blog post, mono and quiet; each link is a 44px-tall target */
+.project-card-links {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.project-card-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: transparent;
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.project-card-links a:hover,
+.project-card-links a:focus-visible {
+  color: var(--ink);
+  text-decoration-color: var(--lime);
 }
 
 /* ============================================================
@@ -1125,6 +1204,13 @@ code[data-theme] span {
     padding-left: 1.5rem;
     border-left: 1px solid var(--hairline);
   }
+  .project-card:nth-child(odd)::before {
+    left: 0;
+  }
+  .project-card-desc {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
   .post-main {
     grid-template-columns: 1fr;
   }
@@ -1163,6 +1249,9 @@ code[data-theme] span {
   .project-card:nth-child(even) {
     padding: 1.25rem 0;
     border-left: 0;
+  }
+  .project-card:nth-child(even)::before {
+    left: 0;
   }
   .log-row {
     grid-template-columns: 1fr;

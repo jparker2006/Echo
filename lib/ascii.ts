@@ -155,30 +155,48 @@ function bakeRingTexture() {
 const PLANET_TEX = bakePlanetTexture();
 const RING_TEX = bakeRingTexture();
 
-// ---- rocket model: (side, forward, up) points, kind 0 body · 1 fin · 2 window ----
+// ---- rocket model: (side, forward, up) points, kind 0 body · 1 fin · 2 window · 3 nozzle ----
+// Points sit ~0.22 units apart (under one cell at the rocket's scale) so the
+// silhouette fills solid instead of reading as a cloud of dots.
 
 type RocketPoint = { p: V3; n: V3; kind: number };
 
+const ROCKET_STEP = 0.22;
+
 function buildRocket(): RocketPoint[] {
   const pts: RocketPoint[] = [];
-  const ring = (f: number, r: number, k: number, kind: number) => {
+  const ring = (f: number, r: number, kind: number, slope = 0) => {
+    const k = Math.max(6, Math.round((Math.PI * 2 * r) / ROCKET_STEP));
     for (let i = 0; i < k; i++) {
       const a = (i / k) * Math.PI * 2;
-      const n: V3 = [Math.cos(a), 0, Math.sin(a)];
-      pts.push({ p: [n[0] * r, f, n[2] * r], n, kind });
+      const n = norm([Math.cos(a), slope, Math.sin(a)]);
+      pts.push({ p: [Math.cos(a) * r, f, Math.sin(a) * r], n, kind });
     }
   };
-  for (let f = -2.4; f <= 2.4; f += 0.3) ring(f, 1, 14, 0);
-  for (let f = 2.4; f <= 4.4; f += 0.25) ring(f, Math.max(0.05, 1 - (f - 2.4) / 2), 12, 0);
-  for (let fin = 0; fin < 3; fin++) {
-    const a = (fin / 3) * Math.PI * 2 + Math.PI / 2;
-    const dir: V3 = [Math.cos(a), 0, Math.sin(a)];
-    for (let f = -2.6; f <= -1.0; f += 0.25)
-      for (let r = 1; r <= 2.1 - (f + 2.6) * 0.55; r += 0.25)
-        pts.push({ p: [dir[0] * r, f, dir[2] * r], n: dir, kind: 1 });
+  // body, then a parabolic nose that comes to a clear point
+  for (let f = -2.3; f < 1.2; f += ROCKET_STEP) ring(f, 1, 0);
+  for (let f = 1.2; f <= 4.2; f += ROCKET_STEP * 0.8) {
+    const u = (f - 1.2) / 3;
+    ring(f, Math.max(0.04, 1 - u * u), 0, 0.66 * u);
   }
-  pts.push({ p: [0, 1.0, 1.02], n: [0, 0, 1], kind: 2 });
-  pts.push({ p: [0, 0.75, 1.02], n: [0, 0, 1], kind: 2 });
+  // engine bell flaring out behind the body
+  for (let f = -2.3; f >= -2.9; f -= ROCKET_STEP * 0.6) ring(f, 0.62 + (-2.3 - f) * 0.45, 3, -0.4);
+  // four swept fins: edge-on pairs give the classic profile from any side
+  for (let fin = 0; fin < 4; fin++) {
+    const a = (fin / 4) * Math.PI * 2;
+    const dir: V3 = [Math.cos(a), 0, Math.sin(a)];
+    const flat: V3 = [-Math.sin(a), 0, Math.cos(a)];
+    for (let r = 1; r <= 2.05; r += ROCKET_STEP) {
+      const s = (r - 1) / 1.05;
+      // leading edge sweeps back, trailing edge reaches past the nozzle
+      for (let f = -2.3 - s * 0.75; f <= -0.6 - s * 1.35; f += ROCKET_STEP)
+        pts.push({ p: [dir[0] * r, f, dir[2] * r], n: flat, kind: 1 });
+    }
+  }
+  // a porthole on the side that faces the viewer as the rocket crosses in front
+  for (let i = -1; i <= 1; i++)
+    for (let j = -1; j <= 1; j++)
+      if (i * i + j * j < 2) pts.push({ p: [1.08, 0.55 + i * 0.2, j * 0.2], n: [1, 0, 0], kind: 2 });
   return pts;
 }
 
@@ -347,11 +365,14 @@ export function renderFrame(s: Scene, t: number) {
     tones[st.k] = tw > 1 ? 2 : tw > 0.4 ? 14 : 1;
   }
 
-  // rocket on an inclined orbit; it banks along the tangent, its "up" is the orbit normal
-  const a = t * 0.42 + 2.1;
-  const rad = R * 1.75;
-  const A = norm([1, 0.16, 0]);
-  const B = norm([0, 0.34, 0.94]);
+  // rocket on an inclined orbit: it crosses in front of the planet low, over
+  // the dark side where the white hull pops, and behind it high, so the disc
+  // and the ring take turns hiding it. Its "up" is the orbit normal, with a
+  // gentle roll so the fins catch the light.
+  const a = t * 0.34 + 0.06; // STATIC_T catches it in profile, about to cross in front
+  const rad = R * 1.72;
+  const A = norm([1, 0.12, 0]);
+  const B = norm([0, -0.42, 0.9]);
   const pos: V3 = [
     rad * (Math.cos(a) * A[0] + Math.sin(a) * B[0]),
     rad * (Math.cos(a) * A[1] + Math.sin(a) * B[1]),
@@ -362,9 +383,13 @@ export function renderFrame(s: Scene, t: number) {
     -Math.sin(a) * A[1] + Math.cos(a) * B[1],
     -Math.sin(a) * A[2] + Math.cos(a) * B[2],
   ]);
-  const up = norm(cross(A, B));
+  const n0 = norm(cross(A, B));
+  const s0 = cross(fwd, n0);
+  const roll = 0.45 * Math.sin(a * 2);
+  const cr = Math.cos(roll), sr = Math.sin(roll);
+  const up: V3 = [n0[0] * cr + s0[0] * sr, n0[1] * cr + s0[1] * sr, n0[2] * cr + s0[2] * sr];
   const side = cross(fwd, up);
-  const scale = R * 0.17;
+  const scale = R * 0.145;
 
   const plot = (lx: number, lf: number, lu: number, glyph: number, tone: number) => {
     const wx = pos[0] + (side[0] * lx + fwd[0] * lf + up[0] * lu) * scale;
@@ -380,27 +405,30 @@ export function renderFrame(s: Scene, t: number) {
     tones[k] = tone;
   };
 
+  // glyph and tone carry the parts apart: a bright heavy hull, solid grey fins
+  // and nozzle (never the ring's dashes), a violet porthole, a lime plume
   for (const pt of ROCKET) {
-    const nv: V3 = [
+    const nl = dot([
       side[0] * pt.n[0] + fwd[0] * pt.n[1] + up[0] * pt.n[2],
       side[1] * pt.n[0] + fwd[1] * pt.n[1] + up[1] * pt.n[2],
       side[2] * pt.n[0] + fwd[2] * pt.n[1] + up[2] * pt.n[2],
-    ];
-    const lit = Math.max(0, dot(nv, LIGHT)) * 0.85 + 0.15;
-    if (pt.kind === 2) {
-      plot(pt.p[0], pt.p[1], pt.p[2], G("o"), 6);
-      continue;
-    }
-    const ramp = pt.kind === 1 ? Math.min(BODY_G.length - 1, Math.round(lit * 5)) : Math.round(lit * (BODY_G.length - 1));
-    plot(pt.p[0], pt.p[1], pt.p[2], BODY_G[ramp], lit > 0.5 ? 9 : 10);
+    ], LIGHT);
+    const [x, f, u] = pt.p;
+    if (pt.kind === 2) plot(x, f, u, G("o"), 6);
+    else if (pt.kind === 1) plot(x, f, u, G(Math.abs(nl) > 0.35 ? "#" : "+"), 10);
+    else if (pt.kind === 3) plot(x, f, u, G(nl > 0 ? "%" : "#"), 10);
+    else plot(x, f, u, G(nl > 0.6 ? "@" : nl > 0.3 ? "%" : nl > 0.05 ? "#" : "*"), nl > 0.05 ? 9 : 10);
   }
 
-  // exhaust: a short, flickering lime plume behind the engine
-  const flick = mulberry32(Math.floor(t * 18));
-  for (let i = 0; i < 26; i++) {
-    const f = -2.7 - flick() * 2.6;
-    const spread = 0.15 + (-2.7 - f) * 0.28;
-    plot((flick() - 0.5) * spread * 2, f, (flick() - 0.5) * spread * 2, G(f > -3.8 ? "*" : f > -4.6 ? "+" : "'"), 11);
+  // exhaust: a lime plume that tapers from a dense core and flickers in length
+  const flick = mulberry32(Math.floor(t * 20) + 1);
+  const len = 2.2 + flick() * 2;
+  for (let i = 0; i < 60; i++) {
+    const d = Math.pow(flick(), 1.4); // 0 at the nozzle, 1 at the tip
+    const r = 0.75 * Math.pow(1 - d, 0.9) * flick();
+    const ang = flick() * TAU;
+    const glyph = d < 0.18 ? "@" : d < 0.4 ? "*" : d < 0.7 ? "+" : "'";
+    plot(Math.cos(ang) * r, -2.9 - d * len, Math.sin(ang) * r, G(glyph), 11);
   }
 }
 

@@ -19,7 +19,13 @@ import { motion, queries } from "@/lib/motion/tokens";
  * settled state is the natural one, and clearProps:"transform" hands the
  * element back to CSS (so :hover transforms work). Only opacity + transform
  * ever animate — zero layout shift.
+ *
+ * The masthead only enters on the first page load. On client-side navigation
+ * the chrome stays put and only the new page's content moves.
  */
+
+let booted = false;
+
 export function RevealRoot({
   children,
   className = "wrap",
@@ -37,7 +43,15 @@ export function RevealRoot({
     () => {
       const el = root.current;
       if (!el) return;
-      const blocks = gsap.utils.toArray<HTMLElement>("[data-reveal]", el);
+      // tells the inline failsafe in app/layout.tsx that the motion layer is alive
+      document.documentElement.setAttribute("data-motion-live", "");
+      let blocks = gsap.utils.toArray<HTMLElement>("[data-reveal]", el);
+      if (booted) {
+        const chrome = blocks.filter((b) => b.matches(".masthead"));
+        gsap.set(chrome, { opacity: 1 });
+        blocks = blocks.filter((b) => !chrome.includes(b));
+      }
+      booted = true;
       const rows = gsap.utils.toArray<HTMLElement>("[data-reveal-row]", el);
 
       const mm = gsap.matchMedia();

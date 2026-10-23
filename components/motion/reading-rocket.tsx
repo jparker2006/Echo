@@ -78,15 +78,15 @@ export function ReadingRocket() {
         aria-label="Back to top"
         title={landed ? "Back to top" : undefined}
       >
-        {/* nose-down rocket for the margin track; the flame trails above it */}
+        {/* nose-down rocket for the margin track: fins and exhaust trail above */}
         <pre className="rr-art rr-art--down" aria-hidden="true">
-          <span className="rr-flame">{"  ' '\n  '.'\n"}</span>
-          {" |=|\n |o|\n/|_|\\\n \\ /\n  V"}
+          <span className="rr-flame">{"  .\n ':'\n"}</span>
+          {"\\|=|/\n |o|\n | |\n \\ /\n  V"}
         </pre>
-        {/* nose-right rocket for the top edge on phones */}
+        {/* nose-right rocket for the top edge on narrow screens */}
         <pre className="rr-art rr-art--right" aria-hidden="true">
-          <span className="rr-flame">{"~'"}</span>
-          {"=[o]>"}
+          <span className="rr-flame">{".:"}</span>
+          {"}=[o]>"}
         </pre>
         <span className="rr-label" aria-hidden="true">
           ↑ top

@@ -1682,6 +1682,7 @@ html[data-motion] [data-print] {
   --track-top: 7rem;
   --track-h: calc(100dvh - 15rem);
   --ship-h: 9rem;
+  --travel: calc(var(--p) * (var(--track-h) - var(--ship-h)));
   position: fixed;
   z-index: 50;
   top: var(--track-top);
@@ -1698,6 +1699,15 @@ html[data-motion] [data-print] {
   bottom: 0;
   width: 1px;
   background-image: repeating-linear-gradient(to bottom, var(--hairline-2) 0 1px, transparent 1px 5px);
+}
+
+/* the stretch already flown, a shade brighter than the road ahead */
+.rr-track::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--travel);
+  background-image: repeating-linear-gradient(to bottom, var(--dim) 0 1px, transparent 1px 5px);
 }
 
 /* the landing pad at the bottom of the track */
@@ -1723,13 +1733,14 @@ html[data-motion] [data-print] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 2.75rem;
   padding: 0;
   border: 0;
   background: none;
   color: var(--ink-2);
   font-family: var(--mono);
   cursor: default;
-  transform: translate(-50%, calc(var(--p) * (var(--track-h) - var(--ship-h))));
+  transform: translate(-50%, var(--travel));
 }
 
 .rr-ship:not(:disabled) {
@@ -1745,6 +1756,9 @@ html[data-motion] [data-print] {
   font-size: 13px;
   line-height: 1.15;
   text-align: left;
+  /* masks the dotted track where it runs behind the hull */
+  background: var(--paper);
+  transition: translate 0.25s ease-out;
 }
 
 .rr-art--right {
@@ -1762,6 +1776,27 @@ html[data-motion] [data-print] {
   opacity: 1;
 }
 
+/* touchdown: engine off, a short settle onto the pad */
+.reading-rocket.is-landed .rr-flame {
+  opacity: 0;
+  animation: none;
+}
+
+.is-landed .rr-art {
+  animation: rr-settle 0.4s ease-out;
+}
+
+/* landed and pointed at: the engine lights and the ship lifts, ready to fly back up */
+.rr-ship:not(:disabled):hover .rr-flame,
+.rr-ship:not(:disabled):focus-visible .rr-flame {
+  opacity: 1;
+}
+
+.rr-ship:not(:disabled):hover .rr-art,
+.rr-ship:not(:disabled):focus-visible .rr-art {
+  translate: 0 -3px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .is-burning .rr-flame {
     animation: rr-flicker 0.16s steps(2) infinite;
@@ -1771,6 +1806,12 @@ html[data-motion] [data-print] {
 @keyframes rr-flicker {
   50% {
     opacity: 0.35;
+  }
+}
+
+@keyframes rr-settle {
+  from {
+    translate: 0 -5px;
   }
 }
 
@@ -1786,28 +1827,52 @@ html[data-motion] [data-print] {
   opacity: 1;
 }
 
-/* not enough margin for a side track: fly along the top edge instead */
+/* not enough margin for a side track: fly along the top edge instead.
+   The bar is a full 44px touch target once the rocket lands. */
 @media (max-width: 70rem) {
+  html:has(.reading-rocket) {
+    scroll-padding-top: 4rem; /* keep focused elements clear of the bar */
+  }
   body:has(.reading-rocket) .masthead {
-    padding-top: 2.5rem;
+    padding-top: 3.25rem;
   }
   .reading-rocket {
-    --ship-w: 4.5rem;
+    --bar-h: 2.75rem;
+    --ship-w: 4rem;
+    --travel: calc(var(--p) * (100cqw - var(--ship-w) - 0.5rem)); /* stops short of the pad */
+    container-type: inline-size;
     top: 0;
     left: 0;
     right: 0;
     width: auto;
-    height: 1.75rem;
-    background: color-mix(in srgb, var(--paper) 96%, transparent);
+    height: var(--bar-h);
+    padding-inline: var(--gutter);
+    background: var(--paper);
   }
-  .rr-track {
+  /* text slides under a soft edge instead of a hard cut */
+  .reading-rocket::after {
+    content: "";
+    position: absolute;
+    top: 100%;
     left: 0;
     right: 0;
+    height: 0.75rem;
+    background: linear-gradient(var(--paper), transparent);
+  }
+  .rr-track {
+    left: var(--gutter);
+    right: var(--gutter);
     top: 50%;
     bottom: auto;
     width: auto;
     height: 1px;
     background-image: repeating-linear-gradient(to right, var(--hairline-2) 0 1px, transparent 1px 5px);
+  }
+  .rr-track::before {
+    inset: 0 auto 0 0;
+    width: var(--travel);
+    height: auto;
+    background-image: repeating-linear-gradient(to right, var(--dim) 0 1px, transparent 1px 5px);
   }
   .rr-track::after {
     left: auto;
@@ -1818,12 +1883,17 @@ html[data-motion] [data-print] {
     height: 1.2rem;
   }
   .rr-ship {
-    top: 50%;
-    left: 0;
+    top: 0;
+    left: var(--gutter);
     flex-direction: row;
-    gap: 0.5rem;
-    min-height: 1.75rem;
-    transform: translate(calc(var(--p) * (100vw - var(--ship-w) - 0.5rem)), -50%);
+    justify-content: flex-end;
+    width: var(--ship-w);
+    height: var(--bar-h);
+    transform: translateX(var(--travel));
+  }
+  /* inset ring: the bar sits flush with the top of the viewport */
+  .rr-ship:focus-visible {
+    outline-offset: -2px;
   }
   .rr-art--down {
     display: none;
@@ -1831,13 +1901,24 @@ html[data-motion] [data-print] {
   .rr-art--right {
     display: block;
     font-size: 12px;
+    padding-inline: 0.25rem;
+  }
+  .rr-ship:not(:disabled):hover .rr-art,
+  .rr-ship:not(:disabled):focus-visible .rr-art {
+    translate: 3px 0;
+  }
+  @keyframes rr-settle {
+    from {
+      translate: -5px 0;
+    }
   }
   .rr-label {
     margin-top: 0;
     position: absolute;
     right: 100%;
-    margin-right: 0.5rem;
+    padding-inline: 0.25rem;
     white-space: nowrap;
+    background: var(--paper);
   }
 }
 

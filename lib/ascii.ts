@@ -10,24 +10,29 @@
 export const ASPECT = 1.75; // cell height / width (line-height 1.05em ÷ 0.6em advance)
 export const GLYPH_W = 0.6; // JetBrains Mono advance width, in em
 
-/** tone index → color. 0 means "empty cell". */
+/** tone index → color. 0 means "empty cell". The planet is saturated violet,
+    the ring a greyer lavender, so the ring still reads where it crosses the disc. */
 export const PALETTE = [
   "transparent",
-  "#4f4a61", // 1 star, dim
-  "#b9b4c9", // 2 star, bright
-  "#3e2380", // 3 planet, night side
-  "#6b3bd6", // 4 planet, dusk
-  "#a56bff", // 5 planet, day
-  "#d6b8ff", // 6 planet, highlight
-  "#5f5288", // 7 ring, shadowed / far
-  "#d8cef4", // 8 ring, lit
+  "#46425a", // 1 star, dim
+  "#c4c0d4", // 2 star, bright
+  "#3a2675", // 3 planet, night side
+  "#5c37c4", // 4 planet, dusk
+  "#844ff0", // 5 planet, day
+  "#cba8ff", // 6 planet, highlight
+  "#4f4870", // 7 ring, shadowed / far
+  "#ddd6f0", // 8 ring, lit
   "#eceaf2", // 9 rocket, lit
   "#8d88a0", // 10 rocket, shade
   "#c6f35a", // 11 flame (the only lime)
+  "#a675ff", // 12 planet, bright
+  "#8f86b2", // 13 ring, mid
+  "#77728c", // 14 star, mid
 ];
 
-const PLANET_RAMP = " .:-=+*#%@";
-const RING_RAMP = " .-~=+*";
+// planet and ring use different glyphs, so the ring stays a ring where it crosses the disc
+const PLANET_RAMP = " .:;+*#%@";
+const RING_RAMP = " .-=";
 const BODY_RAMP = ".:-=+#%@";
 
 type V3 = [number, number, number];
@@ -79,9 +84,9 @@ function fbm(x: number, y: number, z: number) {
 
 // ---- scene constants (view space: x right, y up, z toward the viewer) ----
 
-const LIGHT = norm([-0.62, 0.48, 0.62]);
-const TILT = 0.3; // ring opening
-const ROLL = -0.22; // ring rotation on screen
+const LIGHT = norm([-0.62, 0.2, 0.76]);
+const TILT = 0.36; // ring opening
+const ROLL = -0.2; // ring rotation on screen
 const RING_N: V3 = [-Math.sin(ROLL) * Math.cos(TILT), Math.cos(ROLL) * Math.cos(TILT), Math.sin(TILT)];
 const AX_X: V3 = [Math.cos(ROLL), Math.sin(ROLL), 0];
 const AX_Z: V3 = cross(AX_X, RING_N);
@@ -89,7 +94,15 @@ const AX_Z: V3 = cross(AX_X, RING_N);
 const TW = 128; // planet texture, equirectangular
 const TH = 64;
 const RTW = 192; // ring texture: angle × radius
-const RTH = 24;
+const RTH = 32;
+
+// soft oval on the sphere, `a` wide in longitude and `b` tall in latitude
+function spot(lon: number, lat: number, lon0: number, lat0: number, a: number, b: number) {
+  let dl = Math.abs(lon - lon0) % (Math.PI * 2);
+  dl = Math.min(dl, Math.PI * 2 - dl) / a;
+  const db = (lat - lat0) / b;
+  return Math.exp(-(dl * dl + db * db));
+}
 
 function bakePlanetTexture() {
   const tex = new Float32Array(TW * TH);
@@ -99,26 +112,41 @@ function bakePlanetTexture() {
       const lon = (i / TW) * Math.PI * 2;
       // sample noise on a cylinder so the texture wraps seamlessly in longitude
       const nx = Math.cos(lon) * 1.6, nz = Math.sin(lon) * 1.6, ny = lat * 1.4;
-      const warp = fbm(nx + 7, ny, nz);
-      let v = 0.5 + 0.34 * Math.sin(lat * 9 + warp * 3.2) + 0.18 * (fbm(nx * 2, ny * 2, nz * 2) - 0.5);
-      // one big storm so the spin reads at a glance
-      const dl = lon - 2.2, dla = lat + 0.38;
-      const d = Math.min(Math.abs(dl), Math.PI * 2 - Math.abs(dl));
-      v += 0.55 * Math.exp(-(d * d * 9 + dla * dla * 70));
+      const warp = fbm(nx + 7, ny, nz) - 0.5;
+      // gas-giant belts: broad zones plus thin turbulent stripes
+      let v = 0.56 + 0.26 * Math.sin(lat * 7 + warp * 2.6) + 0.12 * Math.sin(lat * 19 + warp * 5);
+      v += 0.22 * (fbm(nx * 2.4, ny * 2.4, nz * 2.4) - 0.5);
+      v *= 0.72 + 0.28 * Math.cos(lat); // darker poles
+      // one big storm (bright eye, dark collar) and a small white spot on the far
+      // side, so the spin reads from any angle
+      const eye = spot(lon, lat, 2.2, 0.3, 0.2, 0.1);
+      const collar = spot(lon, lat, 2.2, 0.3, 0.38, 0.19);
+      v = v * (1 - 0.85 * collar) + 1.1 * eye;
+      v += 0.6 * spot(lon, lat, 5.1, 0.05, 0.14, 0.06);
       tex[j * TW + i] = Math.max(0, Math.min(1, v));
     }
   }
   return tex;
 }
 
+// radial density of the ring, 0 inner edge → 1 outer edge: a faint inner
+// ring, a dense bright one, the Cassini gap, then a mid-bright outer ring
+function ringDensity(x: number) {
+  if (x < 0.2) return 0.3 + 0.6 * x;
+  if (x < 0.6) return 0.82 + 0.18 * Math.sin(x * 46);
+  if (x < 0.7) return 0; // Cassini gap (also left empty in the geometry)
+  if (x > 0.86 && x < 0.89) return 0.25; // Encke gap
+  return 0.66 - 0.4 * Math.max(0, x - 0.9) * 10;
+}
+
 function bakeRingTexture() {
   const tex = new Float32Array(RTW * RTH);
   for (let j = 0; j < RTH; j++) {
-    const band = 0.55 + 0.45 * noise3(j * 0.9, 3.1, 0.5);
+    const band = ringDensity((j + 0.5) / RTH) * (0.9 + 0.2 * noise3(j * 0.9, 3.1, 0.5));
     for (let i = 0; i < RTW; i++) {
       const a = (i / RTW) * Math.PI * 2;
       const clump = noise3(Math.cos(a) * 3, Math.sin(a) * 3, j * 0.4);
-      tex[j * RTW + i] = band * (0.7 + 0.45 * clump);
+      tex[j * RTW + i] = band * (0.9 + 0.15 * clump);
     }
   }
   return tex;
@@ -166,12 +194,13 @@ export type Scene = {
   cy: number;
   kind: Uint8Array; // 0 sky · 1 planet · 2 ring
   diff: Float32Array; // planet: lit amount incl. ring shadow · ring: lit amount
+  rim: Float32Array; // planet: atmospheric glow at the limb
   lat: Float32Array;
   lon: Float32Array;
   ringR: Uint8Array; // ring radial band
   ringA: Float32Array; // ring angle
   zTop: Float32Array; // nearest opaque depth per cell
-  stars: { k: number; phase: number; speed: number; big: boolean }[];
+  stars: { k: number; phase: number; speed: number; level: number }[]; // level 0 dim · 1 mid · 2 bright
   chars: Uint8Array; // frame output: index into GLYPHS
   tones: Uint8Array; // frame output: index into PALETTE
   zb: Float32Array;
@@ -183,18 +212,21 @@ const PLANET_G = PLANET_RAMP.split("").map(G);
 const RING_G = RING_RAMP.split("").map(G);
 const BODY_G = BODY_RAMP.split("").map(G);
 
+const TAU = Math.PI * 2;
+
 export function createScene(W: number, H: number): Scene {
   const n = W * H;
-  const R = W * 0.235;
-  const RIN = R * 1.24;
-  const ROUT = R * 1.95;
-  const GAP0 = R * 1.6, GAP1 = R * 1.66;
+  const R = W * 0.215;
+  const RIN = R * 1.25;
+  const ROUT = R * 2.12;
+  const GAP0 = RIN + (ROUT - RIN) * 0.6, GAP1 = RIN + (ROUT - RIN) * 0.7; // Cassini gap
   const cx = W / 2, cy = H / 2;
 
   const s: Scene = {
     W, H, R, cx, cy,
     kind: new Uint8Array(n),
     diff: new Float32Array(n),
+    rim: new Float32Array(n),
     lat: new Float32Array(n),
     lon: new Float32Array(n),
     ringR: new Uint8Array(n),
@@ -231,43 +263,51 @@ export function createScene(W: number, H: number): Scene {
         s.zTop[k] = rz;
         s.ringR[k] = Math.min(RTH - 1, Math.floor(((r - RIN) / (ROUT - RIN)) * RTH));
         s.ringA[k] = Math.atan2(dot(rp, AX_X), dot(rp, AX_Z));
-        // the planet's shadow falls across the ring behind it
+        // the planet's shadow falls across the ring behind it: a clean black notch
         const along = dot(rp, LIGHT);
         const perp2 = r * r - along * along;
         const shadowed = along < 0 && perp2 < R * R;
         const front = rz > 0;
-        s.diff[k] = shadowed ? 0.18 : front ? 1 : 0.72;
+        s.diff[k] = shadowed ? 0 : front ? 1 : 0.78;
       } else if (sz > -Infinity) {
         const nrm: V3 = [x / R, y / R, sz / R];
         s.kind[k] = 1;
         s.zTop[k] = sz;
         s.lat[k] = Math.asin(Math.max(-1, Math.min(1, dot(nrm, RING_N))));
         s.lon[k] = Math.atan2(dot(nrm, AX_X), dot(nrm, AX_Z));
-        let lit = Math.max(0, dot(nrm, LIGHT));
+        const nl = dot(nrm, LIGHT);
+        let lit = Math.max(0, nl);
         // the ring's shadow on the planet: march toward the light
         const surf: V3 = [x, y, sz];
         const denom = dot(RING_N, LIGHT);
         if (Math.abs(denom) > 1e-4) {
           const t = -dot(RING_N, surf) / denom;
           if (t > 0 && onRing([surf[0] + LIGHT[0] * t, surf[1] + LIGHT[1] * t, surf[2] + LIGHT[2] * t]))
-            lit *= 0.35;
+            lit *= 0.3;
         }
-        // a thin atmospheric rim so the night-side edge still reads as round
-        s.diff[k] = lit + 0.3 * Math.pow(1 - nrm[2], 4);
+        s.diff[k] = lit;
+        // atmosphere: a bright limb on the day side, a faint one through the
+        // terminator so the night-side edge still reads as round
+        const limb = Math.pow(1 - nrm[2], 3);
+        s.rim[k] = limb * (0.2 + 0.3 * Math.max(0, Math.min(1, nl + 0.35)));
       }
     }
   }
 
+  // sparse stars, kept off the planet's edge and out of the ring's ellipse so
+  // the silhouette stays clean
   const rand = mulberry32(2006 + W);
   for (let k = 0; k < n; k++) {
-    if (s.kind[k] !== 0) continue;
     const r = rand();
-    if (r < 0.045) s.stars.push({ k, phase: rand() * 6.28, speed: 0.6 + rand() * 1.8, big: r < 0.008 });
+    if (s.kind[k] !== 0 || r >= 0.034) continue;
+    const x = (k % W) + 0.5 - cx;
+    const y = (cy - (((k / W) | 0) + 0.5)) * ASPECT;
+    const rz = -(RING_N[0] * x + RING_N[1] * y) / RING_N[2];
+    if (Math.hypot(x, y, rz) < ROUT + 1.5 || Math.hypot(x, y) < R + 2) continue;
+    s.stars.push({ k, phase: rand() * TAU, speed: 0.4 + rand() * 1.2, level: r < 0.004 ? 2 : r < 0.012 ? 1 : 0 });
   }
   return s;
 }
-
-const TAU = Math.PI * 2;
 
 /** Render one frame at time `t` (seconds) into scene.chars / scene.tones. */
 export function renderFrame(s: Scene, t: number) {
@@ -283,17 +323,17 @@ export function renderFrame(s: Scene, t: number) {
       u -= Math.floor(u);
       const v = s.lat[k] / Math.PI + 0.5;
       const tex = PLANET_TEX[Math.min(TH - 1, (v * (TH - 1)) | 0) * TW + ((u * TW) | 0)];
-      // a little ambient keeps the night side readable as a disc
-      const b = Math.min(1, s.diff[k] * (0.45 + 0.75 * tex) + 0.08 + 0.1 * tex);
+      // the belts modulate the light; a little ambient keeps the night side a disc
+      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.07 + 0.1 * tex + s.rim[k]);
       chars[k] = PLANET_G[Math.max(1, Math.round(b * (PLANET_G.length - 1)))];
-      tones[k] = b > 0.72 ? 6 : b > 0.42 ? 5 : b > 0.16 ? 4 : 3;
-    } else if (kd === 2) {
+      tones[k] = b > 0.8 ? 6 : b > 0.6 ? 12 : b > 0.38 ? 5 : b > 0.15 ? 4 : 3;
+    } else if (kd === 2 && s.diff[k] > 0) {
       let u = (s.ringA[k] + ringSpin) / TAU;
       u -= Math.floor(u);
       const tex = RING_TEX[s.ringR[k] * RTW + ((u * RTW) | 0)];
-      const b = Math.min(1, tex * s.diff[k]);
+      const b = Math.min(1, tex * s.diff[k] * 1.15);
       chars[k] = RING_G[Math.max(1, Math.round(b * (RING_G.length - 1)))];
-      tones[k] = s.diff[k] > 0.5 && b > 0.35 ? 8 : 7;
+      tones[k] = b > 0.56 ? 8 : b > 0.28 ? 13 : 7;
     } else {
       chars[k] = 0;
       tones[k] = 0;
@@ -301,10 +341,10 @@ export function renderFrame(s: Scene, t: number) {
   }
 
   for (const st of s.stars) {
-    const tw = Math.sin(t * st.speed + st.phase);
-    if (tw < -0.55) continue;
-    chars[st.k] = G(st.big && tw > 0.6 ? "+" : tw > 0.85 ? "*" : ".");
-    tones[st.k] = st.big || tw > 0.7 ? 2 : 1;
+    const tw = Math.sin(t * st.speed + st.phase) + st.level * 0.5;
+    if (tw < -0.7) continue;
+    chars[st.k] = G(tw > 1.5 ? "+" : tw > 1.1 ? "*" : ".");
+    tones[st.k] = tw > 1 ? 2 : tw > 0.4 ? 14 : 1;
   }
 
   // rocket on an inclined orbit; it banks along the tangent, its "up" is the orbit normal

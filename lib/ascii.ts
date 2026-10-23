@@ -4,7 +4,7 @@
 //
 // Everything that never changes (sphere normals, ring geometry, shadows,
 // textures) is baked once per grid size; a frame is then just lookups plus
-// ~300 rocket points, so it costs well under a millisecond. The same code
+// ~1k rocket points, so it costs well under a millisecond. The same code
 // renders the static server frame and the live canvas frames.
 
 export const ASPECT = 1.75; // cell height / width (line-height 1.05em ÷ 0.6em advance)
@@ -228,7 +228,6 @@ export const GLYPHS = Array.from(new Set((" " + PLANET_RAMP + RING_RAMP + BODY_R
 const G = (ch: string) => GLYPHS.indexOf(ch);
 const PLANET_G = PLANET_RAMP.split("").map(G);
 const RING_G = RING_RAMP.split("").map(G);
-const BODY_G = BODY_RAMP.split("").map(G);
 
 const TAU = Math.PI * 2;
 

@@ -41,7 +41,10 @@ export function AsciiLive({ children }: { children: ReactNode }) {
 
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     const finePointer = matchMedia("(hover: hover) and (pointer: fine)");
-    const pre = el.querySelector("pre");
+    // the still frame CSS is currently showing (wide or narrow grid)
+    const pre =
+      Array.from(el.querySelectorAll("pre")).find((p) => p.getClientRects().length > 0) ??
+      el.querySelector("pre");
     const style = pre ? getComputedStyle(pre) : null;
     const family = style?.fontFamily || "monospace";
     const weight = style?.fontWeight || "400";
@@ -79,6 +82,7 @@ export function AsciiLive({ children }: { children: ReactNode }) {
       // layout size (unaffected by the tilt), fractional like the <pre>'s cells
       const width = parseFloat(getComputedStyle(el).width);
       if (!width) return;
+      // keep in step with the @container breakpoint that swaps the still frames
       const grid = width < 520 ? GRID_NARROW : GRID_WIDE;
       if (!scene || scene.W !== grid.W) scene = createScene(grid.W, grid.H);
       const dpr = Math.min(window.devicePixelRatio || 1, 3);

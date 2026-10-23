@@ -581,6 +581,22 @@ main:focus {
   user-select: none;
 }
 
+/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
+.ascii-static--narrow {
+  display: none;
+  font-size: calc(100cqi / 36);
+}
+
+/* phones get the coarser grid, matching what the canvas switches to */
+@container (max-width: 519.98px) {
+  .ascii-static--wide {
+    display: none;
+  }
+  .ascii-static--narrow {
+    display: block;
+  }
+}
+
 .ascii-canvas {
   position: absolute;
   inset: 0;

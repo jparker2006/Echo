@@ -84,9 +84,7 @@ export default async function PostPage({
             <span className="pager-label">← older</span>
             <span className="pager-title">{older.title}</span>
           </Link>
-        ) : (
-          <span />
-        )}
+        ) : null}
         {newer ? (
           <Link href={`/posts/${newer.slug}`} className="pager pager--next">
             <span className="pager-label">newer →</span>

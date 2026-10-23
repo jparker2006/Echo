@@ -52,7 +52,6 @@ export default async function PostPage({
 
   return (
     <Shell>
-      <ReadingRocket />
       <article className="article">
         <header className="article-head">
           <p className="kicker" data-reveal>
@@ -95,6 +94,8 @@ export default async function PostPage({
       <p className="back">
         <Link href="/">← cd ..</Link>
       </p>
+      {/* last in the page so keyboard users reach the landed rocket after the post */}
+      <ReadingRocket />
     </Shell>
   );
 }

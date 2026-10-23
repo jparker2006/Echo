@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { RevealRoot } from "@/components/motion/reveal-root";
 import { NavLinks } from "@/components/nav-links";
+import { HorizonLive } from "@/components/horizon-live";
 import { HORIZON_NARROW, HORIZON_WIDE, horizonRuns, PALETTE } from "@/lib/ascii";
 
 /** The shared site header: "echo" wordmark top-left (links home),
@@ -62,11 +63,10 @@ export function SectionHead({
   );
 }
 
-/** Site footer: the wordmark signs off with a tiny ASCII ringed planet
-    (the hero's planet, in miniature), then the outbound links. */
 /** The page ends on a horizon: the limb of a huge purple planet in ASCII,
     full-bleed, with two quiet links in the sky above it. One still frame per
-    grid size; CSS shows the one that fits. */
+    grid size; CSS shows the one that fits, and HorizonLive re-lights it to
+    follow the mouse. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
@@ -76,17 +76,17 @@ export function SiteFooter() {
           <a href="https://github.com/jparker2006">github</a>
         </nav>
       </div>
-      <div className="foot-horizon" aria-hidden="true">
+      <HorizonLive>
         <HorizonFrame grid={HORIZON_WIDE} className="foot-art foot-art--wide" />
         <HorizonFrame grid={HORIZON_NARROW} className="foot-art foot-art--narrow" />
-      </div>
+      </HorizonLive>
     </footer>
   );
 }
 
 function HorizonFrame({ grid, className }: { grid: { W: number; H: number }; className: string }) {
   return (
-    <pre className={className}>
+    <pre className={className} data-w={grid.W} data-h={grid.H}>
       {horizonRuns(grid.W, grid.H).map((runs, i) => (
         <span key={i}>
           {runs.map((run, j) => (

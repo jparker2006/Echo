@@ -470,67 +470,88 @@ export const STATIC_T = 3.4;
 
 const HORIZON_RAMP = " .-~=+*#%@";
 
+type Cell = { ch: string; tone: number };
+
+/** Everything about the horizon that doesn't depend on where the light is. */
+export type Horizon = {
+  W: number;
+  H: number;
+  kind: Uint8Array; // 0 sky · 1 planet · 2 atmosphere
+  nx: Float32Array; // planet surface normal
+  ny: Float32Array;
+  nz: Float32Array;
+  tex: Float32Array; // planet cloud texture · atmosphere glow amount
+  rim: Float32Array; // bright band just under the limb
+  fixed: (Cell | null)[]; // stars, the rocket and its trail
+};
+
+/** Where the light comes from: sunX slides the sun left/right (-1…1), and an
+    optional spotlight (strength 0…1) brightens the cells around (spotC, spotR). */
+export type HorizonLight = { sunX: number; spot: number; spotC: number; spotR: number };
+export const HORIZON_REST: HorizonLight = { sunX: -0.75, spot: 0, spotC: 0, spotR: 0 };
+
 /**
- * A static band: the curved edge of a giant planet seen from low orbit, a thin
- * atmosphere glow along the limb, stars above, and a small rocket climbing
- * away on a lime trail. Rendered once (server-side); no animation.
+ * The curved edge of a giant planet seen from low orbit: a thin atmosphere
+ * glow along the limb, stars above, and a small rocket climbing away on a
+ * lime trail. Geometry is baked here; shadeHorizon() lights it.
  */
-export function horizonRuns(W: number, H: number): Run[][] {
+export function createHorizon(W: number, H: number): Horizon {
+  const n = W * H;
   const R = W * 1.55; // radius in columns: the limb spans the width with a visible curve
   const cx = W * 0.5;
   const top = H * (W < 100 ? 0.42 : 0.3); // row where the limb peaks (lower on phones, to fit the rocket)
   const cy = top + R / ASPECT; // planet centre, far below the band
   const atmo = R + ASPECT * 1.4; // about a row and a half of glow above the limb
-  const sun = norm([-0.75, 0.55, 0.38]); // low light from the left: a sunrise edge
   const rand = mulberry32(7 + W);
+  const h: Horizon = {
+    W,
+    H,
+    kind: new Uint8Array(n),
+    nx: new Float32Array(n),
+    ny: new Float32Array(n),
+    nz: new Float32Array(n),
+    tex: new Float32Array(n),
+    rim: new Float32Array(n),
+    fixed: new Array(n).fill(null),
+  };
 
-  const cells: { ch: string; tone: number }[][] = [];
   for (let row = 0; row < H; row++) {
-    const line: { ch: string; tone: number }[] = [];
     for (let col = 0; col < W; col++) {
+      const k = row * W + col;
       const x = col + 0.5 - cx;
       const y = (cy - (row + 0.5)) * ASPECT;
       const d = Math.hypot(x, y);
-      let cell = { ch: " ", tone: 0 };
       if (d < R) {
-        const nz = Math.sqrt(R * R - d * d) / R;
-        const n: V3 = [x / R, y / R, nz];
+        h.kind[k] = 1;
+        h.nx[k] = x / R;
+        h.ny[k] = y / R;
+        h.nz[k] = Math.sqrt(R * R - d * d) / R;
         // cloud bands in perspective: squashed thin at the horizon, wider toward the viewer
         const depth = Math.sqrt(R - d);
-        const tex = fbm(x * 0.045, depth * 0.95, 1.7) * 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(depth * 2.3 + fbm(x * 0.02, depth * 0.3, 4) * 5));
-        // grazing light near the limb, so the edge glows and the surface falls away into night
-        const lit = Math.max(0, dot(n, sun));
-        const rim = Math.pow(Math.max(0, 1 - (R - d) / (ASPECT * 2.2)), 2); // bright edge just under the limb
-        const b = Math.min(1, lit * (0.15 + 1.05 * tex) + 0.55 * rim + 0.03);
-        const ramp = HORIZON_RAMP; // horizontal strokes, so cloud bands read as bands
-        cell = {
-          ch: ramp[Math.max(1, Math.round(b * (ramp.length - 1)))],
-          tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3,
-        };
+        h.tex[k] = fbm(x * 0.045, depth * 0.95, 1.7) * 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(depth * 2.3 + fbm(x * 0.02, depth * 0.3, 4) * 5));
+        h.rim[k] = Math.pow(Math.max(0, 1 - (R - d) / (ASPECT * 2.2)), 2);
       } else if (d < atmo) {
-        const glow = 1 - (d - R) / (atmo - R);
-        cell = { ch: glow > 0.55 ? ":" : ".", tone: glow > 0.55 ? 6 : 13 };
+        h.kind[k] = 2;
+        h.tex[k] = 1 - (d - R) / (atmo - R);
       } else {
         // fewer stars close to the planet, as if washed out by the glow
         const r = rand();
         const near = Math.min(1, (d - atmo) / (R * 0.06));
         const underLinks = col > W * 0.8 && row < 3; // keep the sky clear behind the footer links
-        if (underLinks) cell = { ch: " ", tone: 0 };
-        else if (r < 0.006 * near) cell = { ch: "*", tone: 2 };
-        else if (r < 0.03 * near) cell = { ch: ".", tone: r < 0.015 ? 14 : 1 };
-        else if (r < 0.033 * near) cell = { ch: "+", tone: 14 };
+        if (underLinks) continue;
+        if (r < 0.006 * near) h.fixed[k] = { ch: "*", tone: 2 };
+        else if (r < 0.03 * near) h.fixed[k] = { ch: ".", tone: r < 0.015 ? 14 : 1 };
+        else if (r < 0.033 * near) h.fixed[k] = { ch: "+", tone: 14 };
       }
-      line.push(cell);
     }
-    cells.push(line);
   }
 
   // a small rocket leaving orbit up and to the right, trailing lime exhaust
   const rc = Math.round(W * (W < 100 ? 0.16 : 0.7)); // narrow grid: out on the left, clear of the links
   const rr = 1;
-  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (cells[r]?.[c]?.tone === 2 || cells[r]?.[c]?.tone === 14 || cells[r]?.[c]?.tone === 1) cells[r][c] = { ch: " ", tone: 0 };
+  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
   const put = (r: number, c: number, ch: string, tone: number) => {
-    if (r >= 0 && r < H && c >= 0 && c < W) cells[r][c] = { ch, tone };
+    if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = { ch, tone };
   };
   put(rr, rc, "^", 9);
   put(rr + 1, rc, "#", 9);
@@ -540,21 +561,58 @@ export function horizonRuns(W: number, H: number): Run[][] {
   for (let i = 0; i < 9; i++) {
     const r = rr + 3 + i;
     const c = rc - Math.round(i * i * 0.28);
-    const sky = cells[r]?.[c];
-    if (!sky || (sky.tone !== 0 && sky.tone !== 1 && sky.tone !== 2 && sky.tone !== 14)) break; // stop at the atmosphere
+    if (r >= H || c < 0 || h.kind[r * W + c] !== 0) break; // stop at the atmosphere
     put(r, c, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
   }
+  return h;
+}
 
-  return cells.map((line) => {
+/** Light the horizon and return it as rows of same-color runs. */
+export function shadeHorizon(h: Horizon, light: HorizonLight): Run[][] {
+  const { W, H } = h;
+  const sun = norm([light.sunX, 0.55, 0.38]);
+  const spotR2 = (W * 0.09) ** 2; // spotlight radius ≈ 9% of the width
+  const rows: Run[][] = [];
+  for (let row = 0; row < H; row++) {
     const runs: Run[] = [];
-    for (const { ch, tone } of line) {
-      const t = ch === " " ? (runs.at(-1)?.tone ?? 0) : tone;
+    for (let col = 0; col < W; col++) {
+      const k = row * W + col;
+      let boost = 0;
+      if (light.spot > 0.001) {
+        const dc = col - light.spotC;
+        const dr = (row - light.spotR) * ASPECT;
+        const f = Math.max(0, 1 - (dc * dc + dr * dr) / spotR2);
+        boost = light.spot * f * f;
+      }
+      let cell: Cell = { ch: " ", tone: 0 };
+      const fixed = h.fixed[k];
+      if (fixed) {
+        // stars near the pointer flare up; the rocket and its trail stay as they are
+        cell = boost > 0.12 && (fixed.tone === 1 || fixed.tone === 14) ? { ch: fixed.ch === "." ? "*" : "+", tone: 2 } : fixed;
+      } else if (h.kind[k] === 1) {
+        const lit = Math.max(0, h.nx[k] * sun[0] + h.ny[k] * sun[1] + h.nz[k] * sun[2]);
+        const b = Math.min(1, lit * (0.15 + 1.05 * h.tex[k]) + 0.55 * h.rim[k] + 0.03 + 0.5 * boost);
+        cell = {
+          ch: HORIZON_RAMP[Math.max(1, Math.round(b * (HORIZON_RAMP.length - 1)))],
+          tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3,
+        };
+      } else if (h.kind[k] === 2) {
+        const glow = Math.min(1, h.tex[k] + boost * 0.8);
+        cell = { ch: glow > 0.55 ? ":" : ".", tone: glow > 0.55 ? 6 : 13 };
+      }
+      const t = cell.ch === " " ? (runs.at(-1)?.tone ?? 0) : cell.tone;
       const last = runs.at(-1);
-      if (last && last.tone === t) last.text += ch;
-      else runs.push({ tone: t, text: ch });
+      if (last && last.tone === t) last.text += cell.ch;
+      else runs.push({ tone: t, text: cell.ch });
     }
-    return runs;
-  });
+    rows.push(runs);
+  }
+  return rows;
+}
+
+/** The horizon at rest (light low from the left), for the server-rendered frame. */
+export function horizonRuns(W: number, H: number): Run[][] {
+  return shadeHorizon(createHorizon(W, H), HORIZON_REST);
 }
 
 export const HORIZON_WIDE = { W: 140, H: 20 } as const;

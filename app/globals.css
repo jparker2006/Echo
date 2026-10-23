@@ -429,7 +429,13 @@ main:focus {
   /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
   aspect-ratio: 48 / 37.8;
   transform-style: preserve-3d;
-  will-change: transform;
+}
+
+/* only mice tilt the scene, so only they need it on its own layer */
+@media (hover: hover) and (pointer: fine) {
+  .ascii-scene {
+    will-change: transform;
+  }
 }
 
 .ascii-static {
@@ -451,12 +457,28 @@ main:focus {
   opacity: 0;
 }
 
+/* the canvas starts on the same frame as the <pre>, so a short crossfade
+   hides any sub-pixel difference (and the coarser grid swap on phones) */
+.ascii-static,
+.ascii-canvas {
+  transition: opacity 0.45s ease, visibility 0s linear 0.45s;
+}
+
 .ascii-scene.is-live .ascii-static {
+  opacity: 0;
   visibility: hidden;
 }
 
 .ascii-scene.is-live .ascii-canvas {
   opacity: 1;
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascii-static,
+  .ascii-canvas {
+    transition: none;
+  }
 }
 
 /* ============================================================

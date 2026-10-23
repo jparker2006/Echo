@@ -460,30 +460,6 @@ main:focus {
 }
 
 /* ============================================================
-   headline decode (components/motion/decode.tsx)
-   ============================================================ */
-
-.decode {
-  position: relative;
-}
-
-.decode.is-decoding {
-  color: transparent;
-}
-
-.decode-overlay {
-  position: absolute;
-  inset: 0;
-  color: var(--ink);
-  pointer-events: none;
-}
-
-.decode-noise {
-  color: var(--lime);
-  opacity: 0.8;
-}
-
-/* ============================================================
    home — post index + project teasers
    ============================================================ */
 

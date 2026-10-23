@@ -3,7 +3,6 @@ import { getAllPosts, formatDate } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
 import { AsciiScene } from "@/components/ascii-art";
-import { Decode } from "@/components/motion/decode";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -30,9 +29,7 @@ export default function Home() {
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
-              <Link href={`/posts/${latest.slug}`}>
-                <Decode text={latest.title} />
-              </Link>
+              <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
             </h2>
             <p className="hero-actions" data-reveal>
               <Link href={`/posts/${latest.slug}`} className="cmd-link">

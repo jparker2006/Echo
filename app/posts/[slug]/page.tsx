@@ -5,7 +5,6 @@ import { getAllPosts, getPostBySlug, getPostSlugs, formatDate } from "@/lib/post
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell } from "@/components/chrome";
 import { ReadingRocket } from "@/components/motion/reading-rocket";
-import { Decode } from "@/components/motion/decode";
 
 // Only render posts that exist on disk; unknown slugs 404.
 export const dynamicParams = false;
@@ -63,9 +62,7 @@ export default async function PostPage({
             </span>
             <span className="kicker-file">{post.slug}.md</span>
           </p>
-          <h1 className="post-h1" data-reveal>
-            <Decode text={post.title} />
-          </h1>
+          <h1 className="post-h1" data-reveal>{post.title}</h1>
           {post.description ? (
             <p className="article-dek" data-reveal>
               {post.description}

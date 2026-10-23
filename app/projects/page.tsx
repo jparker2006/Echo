@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { projects } from "@/data/projects";
 import { Shell } from "@/components/chrome";
 import { ProjectLog } from "@/components/project-log";
-import { Decode } from "@/components/motion/decode";
 
 export const metadata: Metadata = {
   title: "projects",
@@ -21,7 +20,7 @@ export default function ProjectsPage() {
           {projects.length} entries
         </p>
         <h1 className="page-title" data-reveal>
-          <Decode text="projects" />
+          projects
         </h1>
       </header>
       <ProjectLog projects={projects} />

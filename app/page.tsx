@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllPosts, formatDate } from "@/lib/posts";
+import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
 import { AsciiScene } from "@/components/ascii-art";
@@ -31,11 +31,22 @@ export default function Home() {
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
             </h2>
+            <p className="hero-copy-dek" data-reveal>
+              {firstSentence(latest.excerpt)}
+            </p>
             <p className="hero-actions" data-reveal>
               <Link href={`/posts/${latest.slug}`} className="cmd-link">
-                <span className="cmd-sigil">$</span> cat {latest.slug}.md
+                <span className="cta-cmd">
+                  <span className="cmd-sigil" aria-hidden="true">
+                    $
+                  </span>{" "}
+                  cat {latest.slug}.md
+                </span>
+                <span className="cta-hint">
+                  read <span className="cta-key" aria-hidden="true">↵</span>
+                </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min read</span>
+              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>

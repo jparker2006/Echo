@@ -11,7 +11,7 @@ export function SiteHeader() {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Link href="/" className="brand" aria-label="echo — home">
+      <Link href="/" className="brand" aria-label="echo, home">
         <span className="brand-word">echo</span>
         <span className="brand-cursor" aria-hidden="true">
           _
@@ -61,10 +61,17 @@ export function SectionHead({
   );
 }
 
+/** Site footer: the wordmark signs off with a tiny ASCII ringed planet
+    (the hero's planet, in miniature), then the outbound links. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
-      <span className="foot-brand">echo</span>
+      <p className="foot-sign">
+        <span className="foot-brand">echo</span>
+        <span className="foot-planet" aria-hidden="true">
+          -=(@)=-
+        </span>
+      </p>
       <nav className="foot-links" aria-label="Elsewhere">
         <a href="/rss.xml">rss</a>
         <a href="https://github.com/jparker2006">github</a>

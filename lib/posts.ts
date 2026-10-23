@@ -83,6 +83,12 @@ export function getAllPosts(): PostMeta[] {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+/** The first sentence of a plain-text blurb, for short deks. Whole text if it has only one. */
+export function firstSentence(text: string): string {
+  const match = text.match(/^.+?[.!?](?=\s+["'“A-Z]|$)/);
+  return match ? match[0] : text;
+}
+
 /** Format an ISO date as an uppercase mono-friendly label, e.g. "MAY 20, 2026". */
 export function formatDate(iso: string): string {
   return new Date(iso)

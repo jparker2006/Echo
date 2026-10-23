@@ -4,7 +4,7 @@ title: about
 
 I've been writing code since I was 13.
 
-Right now I'm building [Glox](https://tryglox.com), a startup that automates the tedious manual work of keeping contractor safety-compliance portals up to date.
+Right now I'm building [OpenWiz](https://github.com/jparker2006/OpenWiz), an open-source layer that connects personal agents to memory and to coordinated fleets of coding agents.
 
 Most of what I think about is agentic AI: systems where you hand a model some tools and a goal and let it act on its own. I build a lot of these for fun. The good ones are on the projects page.
 

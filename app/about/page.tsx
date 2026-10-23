@@ -17,14 +17,14 @@ export default async function AboutPage() {
 
   return (
     <Shell>
-      <article className="article">
-        <header className="page-head">
+      <article className="article about">
+        <header className="page-head about-head">
           <Prompt command="cat about.md" />
           <h1 className="page-title" data-reveal>
             {title}
           </h1>
         </header>
-        <div className="prose post-body" data-reveal dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="prose post-body about-body" data-reveal dangerouslySetInnerHTML={{ __html: html }} />
       </article>
     </Shell>
   );

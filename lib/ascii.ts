@@ -465,3 +465,97 @@ export function frameText(W: number, H: number, t: number) {
 export const GRID_WIDE = { W: 80, H: 36 } as const;
 export const GRID_NARROW = { W: 60, H: 27 } as const;
 export const STATIC_T = 3.4;
+
+// ---- footer horizon: the limb of a huge planet rising at the page's end ----
+
+const HORIZON_RAMP = " .-~=+*#%@";
+
+/**
+ * A static band: the curved edge of a giant planet seen from low orbit, a thin
+ * atmosphere glow along the limb, stars above, and a small rocket climbing
+ * away on a lime trail. Rendered once (server-side); no animation.
+ */
+export function horizonRuns(W: number, H: number): Run[][] {
+  const R = W * 1.55; // radius in columns: the limb spans the width with a visible curve
+  const cx = W * 0.5;
+  const top = H * (W < 100 ? 0.42 : 0.3); // row where the limb peaks (lower on phones, to fit the rocket)
+  const cy = top + R / ASPECT; // planet centre, far below the band
+  const atmo = R + ASPECT * 1.4; // about a row and a half of glow above the limb
+  const sun = norm([-0.75, 0.55, 0.38]); // low light from the left: a sunrise edge
+  const rand = mulberry32(7 + W);
+
+  const cells: { ch: string; tone: number }[][] = [];
+  for (let row = 0; row < H; row++) {
+    const line: { ch: string; tone: number }[] = [];
+    for (let col = 0; col < W; col++) {
+      const x = col + 0.5 - cx;
+      const y = (cy - (row + 0.5)) * ASPECT;
+      const d = Math.hypot(x, y);
+      let cell = { ch: " ", tone: 0 };
+      if (d < R) {
+        const nz = Math.sqrt(R * R - d * d) / R;
+        const n: V3 = [x / R, y / R, nz];
+        // cloud bands in perspective: squashed thin at the horizon, wider toward the viewer
+        const depth = Math.sqrt(R - d);
+        const tex = fbm(x * 0.045, depth * 0.95, 1.7) * 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(depth * 2.3 + fbm(x * 0.02, depth * 0.3, 4) * 5));
+        // grazing light near the limb, so the edge glows and the surface falls away into night
+        const lit = Math.max(0, dot(n, sun));
+        const rim = Math.pow(Math.max(0, 1 - (R - d) / (ASPECT * 2.2)), 2); // bright edge just under the limb
+        const b = Math.min(1, lit * (0.15 + 1.05 * tex) + 0.55 * rim + 0.03);
+        const ramp = HORIZON_RAMP; // horizontal strokes, so cloud bands read as bands
+        cell = {
+          ch: ramp[Math.max(1, Math.round(b * (ramp.length - 1)))],
+          tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3,
+        };
+      } else if (d < atmo) {
+        const glow = 1 - (d - R) / (atmo - R);
+        cell = { ch: glow > 0.55 ? ":" : ".", tone: glow > 0.55 ? 6 : 13 };
+      } else {
+        // fewer stars close to the planet, as if washed out by the glow
+        const r = rand();
+        const near = Math.min(1, (d - atmo) / (R * 0.06));
+        const underLinks = col > W * 0.8 && row < 3; // keep the sky clear behind the footer links
+        if (underLinks) cell = { ch: " ", tone: 0 };
+        else if (r < 0.006 * near) cell = { ch: "*", tone: 2 };
+        else if (r < 0.03 * near) cell = { ch: ".", tone: r < 0.015 ? 14 : 1 };
+        else if (r < 0.033 * near) cell = { ch: "+", tone: 14 };
+      }
+      line.push(cell);
+    }
+    cells.push(line);
+  }
+
+  // a small rocket leaving orbit up and to the right, trailing lime exhaust
+  const rc = Math.round(W * (W < 100 ? 0.16 : 0.7)); // narrow grid: out on the left, clear of the links
+  const rr = 1;
+  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (cells[r]?.[c]?.tone === 2 || cells[r]?.[c]?.tone === 14 || cells[r]?.[c]?.tone === 1) cells[r][c] = { ch: " ", tone: 0 };
+  const put = (r: number, c: number, ch: string, tone: number) => {
+    if (r >= 0 && r < H && c >= 0 && c < W) cells[r][c] = { ch, tone };
+  };
+  put(rr, rc, "^", 9);
+  put(rr + 1, rc, "#", 9);
+  put(rr + 2, rc, "#", 10);
+  put(rr + 2, rc - 1, "/", 10);
+  put(rr + 2, rc + 1, "\\", 10);
+  for (let i = 0; i < 9; i++) {
+    const r = rr + 3 + i;
+    const c = rc - Math.round(i * i * 0.28);
+    const sky = cells[r]?.[c];
+    if (!sky || (sky.tone !== 0 && sky.tone !== 1 && sky.tone !== 2 && sky.tone !== 14)) break; // stop at the atmosphere
+    put(r, c, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
+  }
+
+  return cells.map((line) => {
+    const runs: Run[] = [];
+    for (const { ch, tone } of line) {
+      const t = ch === " " ? (runs.at(-1)?.tone ?? 0) : tone;
+      const last = runs.at(-1);
+      if (last && last.tone === t) last.text += ch;
+      else runs.push({ tone: t, text: ch });
+    }
+    return runs;
+  });
+}
+
+export const HORIZON_WIDE = { W: 140, H: 20 } as const;
+export const HORIZON_NARROW = { W: 60, H: 13 } as const;

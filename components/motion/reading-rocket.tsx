@@ -20,6 +20,7 @@ export function ReadingRocket() {
   useEffect(() => {
     const el = root.current;
     const article = document.querySelector<HTMLElement>(".article");
+    const footer = document.querySelector<HTMLElement>(".site-foot");
     if (!el || !article) return;
 
     let raf = 0;
@@ -34,6 +35,12 @@ export function ReadingRocket() {
       const p = end > top ? (window.scrollY - top) / (end - top) : 1;
       const clamped = Math.max(0, Math.min(1, p));
       el.style.setProperty("--p", clamped.toFixed(4));
+      // once the footer's horizon scrolls into view, end the track above it
+      // so the landed rocket never sits on top of the art
+      if (footer) {
+        const floor = footer.getBoundingClientRect().top - el.getBoundingClientRect().top - 24;
+        el.style.setProperty("--floor", `${Math.max(180, Math.round(floor))}px`);
+      }
       const nowLanded = clamped >= 0.995;
       if (nowLanded !== wasLanded) {
         wasLanded = nowLanded;

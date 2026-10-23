@@ -63,6 +63,7 @@ html {
 }
 
 body {
+  overflow-x: clip; /* the full-bleed footer is 100vw wide */
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
@@ -1528,54 +1529,36 @@ code[data-theme] span {
    footer
    ============================================================ */
 
-/* bookends the masthead: same dotted rule, wordmark left, links right */
+/* full-bleed: the footer breaks out of the reading column to the viewport
+   edges (body clips the overflow), and acts as the container the art scales to */
 .site-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 2rem;
-  margin-top: clamp(2.5rem, 6vw, 4rem);
-  padding: 0.75rem 0 2rem;
-  background-image: var(--dots);
-  background-size: 100% 1px;
-  background-position: top;
-  background-repeat: no-repeat;
+  margin-top: clamp(3rem, 6vw, 5rem);
+  margin-inline: calc(50% - 50vw);
+  container-type: inline-size;
   font-family: var(--mono);
-  font-size: 0.78rem;
-  color: var(--muted);
+  font-size: 0.74rem;
 }
 
-.foot-sign {
+/* two quiet links in the sky, aligned to the page's right edge */
+.foot-inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
   display: flex;
-  align-items: baseline;
-  gap: 0.9rem;
-}
-
-.foot-brand {
-  font-family: var(--sans);
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: -0.04em;
-  color: var(--ink);
-}
-
-/* the hero planet in miniature: purple, because it's ASCII art */
-.foot-planet {
-  color: var(--purple);
-  white-space: pre;
-  user-select: none;
+  justify-content: flex-end;
 }
 
 .foot-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
 .foot-links a {
   display: inline-block;
   padding: 0.75rem 0;
-  color: var(--muted);
+  color: var(--dim);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -1586,6 +1569,39 @@ code[data-theme] span {
 .foot-links a:hover {
   color: var(--ink);
   text-decoration-color: var(--lime);
+}
+
+/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
+.foot-horizon {
+  margin-top: -1.5rem;
+  user-select: none;
+}
+
+.foot-art {
+  margin: 0;
+  font-family: var(--mono);
+  font-variant-ligatures: none;
+  line-height: 1.05;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.foot-art--wide {
+  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
+}
+
+.foot-art--narrow {
+  display: none;
+  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
+}
+
+@container (max-width: 639.98px) {
+  .foot-art--wide {
+    display: none;
+  }
+  .foot-art--narrow {
+    display: block;
+  }
 }
 
 /* ============================================================
@@ -1718,7 +1734,7 @@ html[data-motion] [data-print] {
 .reading-rocket {
   --p: 0;
   --track-top: 7rem;
-  --track-h: calc(100dvh - 15rem);
+  --track-h: min(calc(100dvh - 15rem), var(--floor, 100dvh)); /* --floor: set from JS, stops above the footer */
   --ship-h: 9rem;
   --travel: calc(var(--p) * (var(--track-h) - var(--ship-h)));
   position: fixed;

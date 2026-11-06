@@ -12,4 +12,4 @@ When I'm not doing that, I watch every season of Survivor and Big Brother, and I
 
 echo is where I write about whatever I want: my projects, opinions, TV and movies, sports, and anything else I think about.
 
-[sudojparker@gmail.com](mailto:sudojparker@gmail.com) · [github](https://github.com/jparker2006)
+[sudojparker@gmail.com](mailto:sudojparker@gmail.com)

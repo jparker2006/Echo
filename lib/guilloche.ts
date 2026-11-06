@@ -50,6 +50,12 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 function tealFor(b: number): RGB {
   return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
 }
+/** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
+const HERO_DEEP: RGB = [13, 50, 60];
+const HERO_LIGHT: RGB = [104, 178, 190];
+function heroTealFor(b: number): RGB {
+  return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
+}
 
 // ---- noise: seeded starfields and smooth value noise (periodic when fed a circle) ----
 
@@ -94,7 +100,8 @@ function strokeRun(
   i0: number,
   i1: number,
   B: number,
-  gain: number
+  gain: number,
+  ramp: (b: number) => RGB
 ) {
   let cur: number[] = [];
   let key = -1;
@@ -103,7 +110,7 @@ function strokeRun(
       const bi = key >> 1;
       const b = (bi + 0.5) / B;
       if (key & 1) p.line(cur, mix(ORANGE, ORANGE_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
-      else p.line(cur, tealFor(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
+      else p.line(cur, ramp(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
     }
     cur = [];
   };
@@ -129,7 +136,8 @@ function strokeSeries(
   ok: boolean[] | null,
   warm: boolean[] | null,
   B: number,
-  gain = 1
+  gain = 1,
+  ramp: (b: number) => RGB = tealFor
 ) {
   const n = bright.length;
   let i = 0;
@@ -140,7 +148,7 @@ function strokeSeries(
     }
     let j = i;
     while (j + 1 < n && (!ok || ok[j + 1])) j++;
-    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain);
+    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain, ramp);
     i = j + 1;
   }
 }
@@ -164,13 +172,231 @@ function starfield(p: Painter, x0: number, y0: number, w: number, h: number, n: 
 // hero planet
 // ============================================================
 
-/** Body-fixed wave field: a shape on the planet's surface, drifting slowly. */
-function bodyWave(th: number, ph: number, t: number) {
-  return (
-    0.45 * Math.sin(3 * th + 2.1 * ph + 0.25 * t) +
-    0.3 * Math.sin(5 * th - 1.3 * ph - 0.18 * t) +
-    0.5 * (2 * noise(1.6 * Math.cos(th) + 10, 1.6 * Math.sin(th) + 2 * ph + 0.05 * t) - 1)
-  );
+type V3 = [number, number, number];
+
+/** smooth 3D value noise in [0, 1]; fed points on the sphere, it has no seam */
+function noise3(x: number, y: number, z: number) {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const zi = Math.floor(z);
+  const f = (v: number) => v * v * (3 - 2 * v);
+  const u = f(x - xi);
+  const v = f(y - yi);
+  const w = f(z - zi);
+  const h = (i: number, j: number, k: number) => hash(i + Math.imul(k, 1013), j - Math.imul(k, 7919));
+  const lerp = (a: number, b: number, s: number) => a + (b - a) * s;
+  const plane = (k: number) =>
+    lerp(lerp(h(xi, yi, k), h(xi + 1, yi, k), u), lerp(h(xi, yi + 1, k), h(xi + 1, yi + 1, k), u), v);
+  return lerp(plane(zi), plane(zi + 1), w);
+}
+
+/** Eddies on the body: [centre longitude, latitude, twist (rad), size]. Each one
+    turns the surface round its centre, most at the core, curling the bands into a swirl. */
+const EDDIES: readonly [number, number, number, number][] = [
+  [0.4, 0.32, 3.4, 0.2],
+  [1.9, -0.42, -3.0, 0.24],
+  [2.9, 0.62, 2.6, 0.16],
+  [3.9, 0.05, -3.6, 0.22],
+  [4.8, -0.2, 2.8, 0.17],
+  [5.6, 0.48, -2.9, 0.19],
+  [1.2, 0.95, 2.4, 0.15],
+  [3.3, -0.88, -2.5, 0.18],
+  // small eddies along the stormier bands
+  [1.0, -0.05, 2.2, 0.09],
+  [2.4, 0.18, -2.4, 0.08],
+  [4.3, 0.42, 2.1, 0.08],
+  [5.1, -0.55, -2.3, 0.1],
+  [0.1, -0.7, 2.0, 0.09],
+  [3.0, -0.28, 2.6, 0.07],
+];
+/** eddy centres as unit vectors, with the falloff scale: [cx, cy, cz, twist, 1 / (size² / 2)] */
+const EDDY_AXES = EDDIES.map(([lon, lat, tw, sz]) => [
+  Math.cos(lat) * Math.sin(lon),
+  Math.sin(lat),
+  Math.cos(lat) * Math.cos(lon),
+  tw,
+  2 / (sz * sz),
+]);
+
+/** Directional waves across the surface: [direction (unit, mostly round the equator), frequency, amplitude, phase]. */
+const WAVES: readonly [V3, number, number, number][] = (
+  [
+    [[1, 0.25, 0.2], 7, 0.05, 0.3],
+    [[-0.3, 0.15, 1], 11, 0.03, 1.7],
+    [[0.7, -0.3, -0.65], 17, 0.017, 4.1],
+    [[0.2, 0.4, -0.9], 5, 0.04, 2.6],
+    [[0.9, -0.1, 0.4], 29, 0.008, 0.9],
+  ] as [V3, number, number, number][]
+).map(([d, f, a, ph]) => {
+  const m = Math.hypot(d[0], d[1], d[2]);
+  return [[d[0] / m, d[1] / m, d[2] / m], f, a, ph];
+});
+
+/** The engraving's scalar field on the unit sphere. Its contours are the
+    engraved lines: latitude bands, waved, roughened and curled into eddies.
+    Returns [field, local relief in -1..1]. Smooth everywhere, so no seam. */
+function terrain(p: V3): [number, number] {
+  let [x, y, z] = p;
+  for (const [c0, c1, c2, tw, k2] of EDDY_AXES) {
+    const dot = x * c0 + y * c1 + z * c2;
+    const e = (1 - dot) * k2;
+    if (e > 9) continue; // too far from this eddy to turn
+    const ang = tw * Math.exp(-e);
+    const c: V3 = [c0, c1, c2];
+    // Rodrigues: rotate p round c by ang
+    const ca = Math.cos(ang);
+    const sa = Math.sin(ang);
+    const cxp: V3 = [c[1] * z - c[2] * y, c[2] * x - c[0] * z, c[0] * y - c[1] * x];
+    const k = dot * (1 - ca);
+    x = x * ca + cxp[0] * sa + c[0] * k;
+    y = y * ca + cxp[1] * sa + c[1] * k;
+    z = z * ca + cxp[2] * sa + c[2] * k;
+  }
+  const lat = Math.asin(Math.max(-1, Math.min(1, y)));
+  // bands of calmer and rougher water, by latitude
+  const rough = 0.55 + 0.45 * Math.sin(5.3 * lat + 0.8) * Math.sin(2.1 * lat - 0.4);
+  let wv = 0;
+  for (const [d, f, a, ph] of WAVES) wv += a * Math.sin(f * (d[0] * x + d[1] * y + d[2] * z) + ph + 1.5 * Math.sin(3 * lat));
+  const n =
+    0.07 * (noise3(3.2 * x + 5, 3.2 * y + 9, 3.2 * z + 1) - 0.5) +
+    0.035 * (noise3(7 * x, 7 * y, 7 * z) - 0.5) +
+    0.016 * (noise3(16 * x + 2, 16 * y, 16 * z + 7) - 0.5);
+  const rel = (wv + n) * rough;
+  // calm near the poles so the polar caps stay clean circles
+  const calm = clamp01((1.44 - Math.abs(lat)) / 0.25);
+  return [lat + rel * calm, Math.tanh(rel * 5)];
+}
+
+/** One engraved contour: per point, its body-fixed position on the unit sphere and relief w. */
+interface Contour {
+  x: Float64Array;
+  y: Float64Array;
+  z: Float64Array;
+  w: Float64Array;
+  closed: boolean;
+}
+
+const contourCache = new Map<number, Contour[]>();
+
+/** Contours of the terrain field (marching squares on a longitude × latitude grid
+    that wraps in longitude), chained into polylines. Body-fixed, so it is built
+    once per quality and the planet just turns underneath the view. */
+function heroContours(q: number): Contour[] {
+  const hit = contourCache.get(q);
+  if (hit) return hit;
+  const NL = Math.round(150 * q); // levels over the latitude span
+  const NT = Math.round(520 * q); // grid columns (longitude, wrapping)
+  const NP = Math.round(340 * q); // grid rows (latitude)
+  const P0 = -1.566;
+  const P1 = 1.566;
+  const L0 = -1.548; // the outermost levels ring the poles tightly, so no bare cap shows
+  const step = (2 * -L0) / NL;
+  const F = new Float64Array(NT * (NP + 1));
+  const Wr = new Float64Array(NT * (NP + 1));
+  for (let j = 0; j <= NP; j++) {
+    const ph = P0 + ((P1 - P0) * j) / NP;
+    for (let i = 0; i < NT; i++) {
+      const th = (TAU * i) / NT;
+      const [f, w] = terrain([Math.cos(ph) * Math.sin(th), Math.sin(ph), Math.cos(ph) * Math.cos(th)]);
+      F[j * NT + i] = (f - L0) / step - 0.5; // level l sits where this crosses an integer
+      Wr[j * NT + i] = w;
+    }
+  }
+  const val = (i: number, j: number) => F[j * NT + (i % NT)];
+  // edge key: horizontal edge (i,j)-(i+1,j) → dir 0, vertical (i,j)-(i,j+1) → dir 1
+  const key = (l: number, i: number, j: number, dir: number) => ((l * (NP + 1) + j) * NT + (i % NT)) * 2 + dir;
+  const pos = new Map<number, [number, number, number]>();
+  const adj = new Map<number, number[]>();
+  const edgePoint = (l: number, i: number, j: number, dir: number) => {
+    const k = key(l, i, j, dir);
+    if (!pos.has(k)) {
+      const i2 = dir ? i : i + 1;
+      const j2 = dir ? j + 1 : j;
+      const a = val(i, j);
+      const b = val(i2, j2);
+      const s = (l - a) / (b - a);
+      const th = (TAU * (i + (i2 - i) * s)) / NT;
+      const ph = P0 + ((P1 - P0) * (j + (j2 - j) * s)) / NP;
+      const w = Wr[j * NT + (i % NT)] * (1 - s) + Wr[j2 * NT + (i2 % NT)] * s;
+      pos.set(k, [th, ph, w]);
+    }
+    return k;
+  };
+  const link = (a: number, b: number) => {
+    (adj.get(a) ?? adj.set(a, []).get(a)!).push(b);
+    (adj.get(b) ?? adj.set(b, []).get(b)!).push(a);
+  };
+  for (let j = 0; j < NP; j++) {
+    for (let i = 0; i < NT; i++) {
+      const v0 = val(i, j); // corners: 0 (i,j) 1 (i+1,j) 2 (i+1,j+1) 3 (i,j+1)
+      const v1 = val(i + 1, j);
+      const v2 = val(i + 1, j + 1);
+      const v3 = val(i, j + 1);
+      const lo = Math.max(0, Math.ceil(Math.min(v0, v1, v2, v3)));
+      const hi = Math.min(NL - 1, Math.floor(Math.max(v0, v1, v2, v3)));
+      for (let l = lo; l <= hi; l++) {
+        const c = (v0 > l ? 1 : 0) | (v1 > l ? 2 : 0) | (v2 > l ? 4 : 0) | (v3 > l ? 8 : 0);
+        if (c === 0 || c === 15) continue;
+        const eB = () => edgePoint(l, i, j, 0); // bottom: 0-1
+        const eR = () => edgePoint(l, i + 1, j, 1); // right: 1-2
+        const eT = () => edgePoint(l, i, j + 1, 0); // top: 3-2
+        const eL = () => edgePoint(l, i, j, 1); // left: 0-3
+        const centreHigh = (v0 + v1 + v2 + v3) / 4 > l;
+        switch (c) {
+          case 1: case 14: link(eL(), eB()); break;
+          case 2: case 13: link(eB(), eR()); break;
+          case 3: case 12: link(eL(), eR()); break;
+          case 4: case 11: link(eR(), eT()); break;
+          case 6: case 9: link(eB(), eT()); break;
+          case 7: case 8: link(eL(), eT()); break;
+          case 5: // 0 and 2 high
+            if (centreHigh) { link(eL(), eT()); link(eB(), eR()); } else { link(eL(), eB()); link(eR(), eT()); }
+            break;
+          case 10: // 1 and 3 high
+            if (centreHigh) { link(eL(), eB()); link(eR(), eT()); } else { link(eL(), eT()); link(eB(), eR()); }
+            break;
+        }
+      }
+    }
+  }
+  // chain: start from loose ends first, then walk the remaining closed loops
+  const seen = new Set<number>();
+  const out: Contour[] = [];
+  const walk = (start: number) => {
+    const ids = [start];
+    seen.add(start);
+    let prev = -1;
+    let cur = start;
+    let closed = false;
+    for (;;) {
+      const nb = adj.get(cur)!;
+      const next = nb.find((n) => n !== prev && !seen.has(n));
+      if (next === undefined) {
+        closed = nb.length === 2 && nb.includes(start) && ids.length > 2;
+        break;
+      }
+      seen.add(next);
+      ids.push(next);
+      prev = cur;
+      cur = next;
+    }
+    if (ids.length < 3) return;
+    const n = ids.length;
+    const f = () => new Float64Array(n);
+    const c: Contour = { x: f(), y: f(), z: f(), w: f(), closed };
+    ids.forEach((id, m) => {
+      const [th, ph, w] = pos.get(id)!;
+      c.x[m] = Math.cos(ph) * Math.sin(th);
+      c.y[m] = Math.sin(ph);
+      c.z[m] = Math.cos(ph) * Math.cos(th);
+      c.w[m] = w;
+    });
+    out.push(c);
+  };
+  for (const [k, nb] of adj) if (nb.length === 1 && !seen.has(k)) walk(k);
+  for (const k of adj.keys()) if (!seen.has(k)) walk(k);
+  contourCache.set(q, out);
+  return out;
 }
 
 /** Ring plane is XZ, tipped round Z and then viewed at VIEW_TILT. */
@@ -192,23 +418,14 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const lm = Math.hypot(0.55, 0.5, 0.42);
   const L: [number, number, number] = [0.55 / lm, 0.5 / lm, 0.42 / lm]; // light: right, up, toward viewer
   const spin = t * 0.05;
-  const B = q >= 1 ? 8 : 3;
-  const NL = Math.round(96 * q);
-  const NS = Math.round(220 * q);
-  const NU = Math.round(160 * q);
-  const NR = Math.round(22 * q);
+  const B = q >= 1 ? 20 : 8; // fine light steps live; the still keeps its markup small
+  const NU = Math.round(180 * q);
+  const NR = Math.round(28 * q);
   const psi = -0.32;
 
   starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
 
-  // warm halo in the sky
-  p.disc(cx, cy, R * 1.28, [
-    [0.78, ORANGE, 0],
-    [0.86, ORANGE, 0.11],
-    [1, ORANGE, 0],
-  ]);
-
-  // rings, back half (drawn under the body)
+  // rings. Teal everywhere; burnt orange only where the ring catches the sun.
   const ringPass = (front: boolean) => {
     for (let i = 0; i < NR; i++) {
       const a = R * (1.32 + (0.66 * i) / Math.max(1, NR - 1));
@@ -222,10 +439,10 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
         xy.push(cx + sx, cy - sy);
         const lit = (sx * L[0] + sy * L[1]) / a;
         ok.push(z > 0 === front);
-        warm.push(front && lit > 0.45);
+        warm.push(lit > 0.45);
         bright.push(front ? 0.3 + 0.55 * Math.max(0, lit) : 0.14);
       }
-      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5);
+      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5, heroTealFor);
     }
   };
   // one dotted outer orbit
@@ -243,41 +460,46 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     cy,
     R,
     [
-      [0, [22, 66, 76], 1],
-      [0.6, [7, 27, 32], 1],
-      [1, [3, 12, 15], 1],
+      [0, [18, 58, 68], 1],
+      [0.6, [6, 24, 29], 1],
+      [1, [2, 10, 13], 1],
     ],
     cx + L[0] * R * 0.4,
     cy - L[1] * R * 0.4
   );
 
-  // engraving: latitude lines, displaced by the wave field and bunched by light
-  for (let k = 0; k < NL; k++) {
-    const ph = -1.5 + (3 * (k + 0.5)) / NL;
-    const cp = Math.cos(ph);
-    const sp = Math.sin(ph);
+  // engraving: the terrain's contours, turned with the planet. A closed contour
+  // starts its stroke on the far side, so no line ever breaks on the visible face.
+  const thin = q < 1 ? 3 : 1; // the still keeps every third point
+  // live frames size the contour grid to the planet: a small planet needs fewer lines
+  const cq = q >= 1 ? Math.max(0.6, Math.min(1, Math.round(R / 15) / 10)) : q;
+  const cs = Math.cos(spin);
+  const ss = Math.sin(spin);
+  for (const c of heroContours(cq)) {
+    const n = c.x.length;
+    // turn round the polar axis, then tip toward the viewer: depth of point m
+    const depth = (m: number) => c.y[m] * sT + (c.z[m] * cs - c.x[m] * ss) * cT;
+    let s0 = 0;
+    if (c.closed) for (let m = 0; m < n; m += 4) if (depth(m) <= 0) { s0 = m; break; }
+    const last = c.closed ? n : n - 1; // a closed loop ends back on its first point
     const xy: number[] = [];
     const bright: number[] = [];
     const ok: boolean[] = [];
-    for (let j = 0; j < NS; j++) {
-      const th = (TAU * j) / NS;
-      const al = th + spin;
-      const w = bodyWave(th, ph, t);
-      const r = R * (1 + 0.03 * w);
-      const X = cp * Math.sin(al);
-      const Y = sp;
-      const Z = cp * Math.cos(al);
-      const y2 = Y * cT - Z * sT;
-      const z2 = Y * sT + Z * cT;
-      xy.push(cx + r * X, cy - r * y2);
+    for (let k = 0; k <= last; k = k < last && k + thin > last ? last : k + thin) {
+      const m = (s0 + k) % n;
+      const X = c.x[m] * cs + c.z[m] * ss;
+      const Z = c.z[m] * cs - c.x[m] * ss;
+      const y2 = c.y[m] * cT - Z * sT;
+      const z2 = c.y[m] * sT + Z * cT;
+      xy.push(cx + R * X, cy - R * y2);
       ok.push(z2 > 0);
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
-      bright.push(clamp01(0.06 + 0.78 * Math.max(0, d) ** 1.3 + 0.1 * w + 0.2 * (1 - z2) ** 4));
+      bright.push(clamp01(0.24 + 0.7 * Math.max(0, d) + 0.06 * c.w[m] + 0.12 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B);
+    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroTealFor);
   }
 
-  // crisp limb, and a burnt-orange rim on the lit side
+  // crisp limb, and a thin burnt-orange glow on the lit side
   const limb: number[] = [];
   for (let j = 0; j <= 120; j++) {
     const a = (TAU * j) / 120;
@@ -286,8 +508,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   p.line(limb, TEAL, 0.6, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
-    [1.1, 0.8, 7, 0.07],
-    [1.0, 0.8, 3, 0.2],
+    [0.9, 0.8, 2.4, 0.22],
     [0.9, 0.8, 1.1, 0.95],
   ] as const) {
     const arc: number[] = [];
@@ -461,9 +682,20 @@ export function canvasPainter(ctx: CanvasRenderingContext2D): Painter {
 }
 
 const css = (c: RGB) => `rgb(${c[0].toFixed(0)},${c[1].toFixed(0)},${c[2].toFixed(0)})`;
+/** path data in tenths of a pixel, relative after the first point: compact server markup */
+const num = (v: number) => (v / 10).toString().replace(/^(-?)0\./, "$1.");
 const d = (pts: number[], close: boolean) => {
-  let s = `M${pts[0].toFixed(1)} ${pts[1].toFixed(1)}`;
-  for (let i = 2; i < pts.length; i += 2) s += `L${pts[i].toFixed(1)} ${pts[i + 1].toFixed(1)}`;
+  let px = Math.round(pts[0] * 10);
+  let py = Math.round(pts[1] * 10);
+  let s = `M${num(px)} ${num(py)}l`;
+  for (let i = 2; i < pts.length; i += 2) {
+    const x = Math.round(pts[i] * 10);
+    const y = Math.round(pts[i + 1] * 10);
+    const dy = num(y - py);
+    s += `${i > 2 ? " " : ""}${num(x - px)}${dy[0] === "-" ? "" : " "}${dy}`;
+    px = x;
+    py = y;
+  }
   return close ? `${s}Z` : s;
 };
 

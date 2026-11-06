@@ -41,23 +41,20 @@ export function Prompt({ command }: { command: string }) {
   );
 }
 
-/** Mono section heading with a dotted rule and an optional right-hand note,
-    e.g. `ls /posts ··········· 2 posts`. */
+/** Large serif section title (`posts`, `projects`) with an optional mono
+    note on the right, e.g. `all 61 →`. */
 export function SectionHead({
   id,
-  command,
+  title,
   aside,
 }: {
   id?: string;
-  command: string;
+  title: string;
   aside?: ReactNode;
 }) {
   return (
     <h2 className="section-head" id={id} data-reveal>
-      <span className="section-cmd">
-        <span className="cmd-sigil">$</span> {command}
-      </span>
-      <span className="section-rule" aria-hidden="true" />
+      <span className="section-title">{title}</span>
       {aside ? <span className="section-aside">{aside}</span> : null}
     </h2>
   );
@@ -71,9 +68,20 @@ export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <Link href="/" className="brand" aria-label="echo, home">
+          <span className="brand-word">echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </Link>
         <nav className="foot-links" aria-label="Elsewhere">
+          <Link href="/">posts</Link>
+          <Link href="/projects">projects</Link>
+          <Link href="/about">about</Link>
+          <a href="https://github.com/jparker2006" target="_blank" rel="noreferrer">
+            github
+          </a>
           <a href="/rss.xml">rss</a>
-          <a href="https://github.com/jparker2006">github</a>
         </nav>
       </div>
       <HorizonLive>

@@ -58,7 +58,7 @@ export default function Home() {
       <section className="home-section" aria-labelledby="posts-head">
         <SectionHead
           id="posts-head"
-          command="ls /posts"
+          title="posts"
           aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
         />
         <ol className="post-list">
@@ -81,7 +81,7 @@ export default function Home() {
       <section className="home-section" aria-labelledby="projects-head">
         <SectionHead
           id="projects-head"
-          command="ls /projects"
+          title="projects"
           aside={<Link href="/projects">all {projects.length} →</Link>}
         />
         <ul className="project-grid">

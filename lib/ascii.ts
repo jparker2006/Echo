@@ -24,16 +24,16 @@ export const PALETTE = [
   "#ddd6f0", // 8 ring, lit
   "#eceaf2", // 9 rocket, lit
   "#8d88a0", // 10 rocket, shade
-  "#c6f35a", // 11 flame (the only lime)
+  "#c6f35a", // 11 lime, unused by the art: the UI accent lives in the CSS
   "#a675ff", // 12 planet, bright
   "#8f86b2", // 13 ring, mid
   "#77728c", // 14 star, mid
 ];
 
 // planet and ring use different glyphs, so the ring stays a ring where it crosses the disc
-const PLANET_RAMP = " .:;+*#%@";
-const RING_RAMP = " .-=";
-const BODY_RAMP = ".:-=+#%@";
+const PLANET_RAMP = " ·.:;+";
+const RING_RAMP = " ·.:";
+const BODY_RAMP = "·.:-=+";
 
 type V3 = [number, number, number];
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -306,7 +306,7 @@ export function createScene(W: number, H: number): Scene {
         // atmosphere: a bright limb on the day side, a faint one through the
         // terminator so the night-side edge still reads as round
         const limb = Math.pow(1 - nrm[2], 3);
-        s.rim[k] = limb * (0.2 + 0.3 * Math.max(0, Math.min(1, nl + 0.35)));
+        s.rim[k] = limb * (0.4 + 0.45 * Math.max(0, Math.min(1, nl + 0.35)));
       }
     }
   }
@@ -341,16 +341,17 @@ export function renderFrame(s: Scene, t: number) {
       const v = s.lat[k] / Math.PI + 0.5;
       const tex = PLANET_TEX[Math.min(TH - 1, (v * (TH - 1)) | 0) * TW + ((u * TW) | 0)];
       // the belts modulate the light; a little ambient keeps the night side a disc
-      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.07 + 0.1 * tex + s.rim[k]);
+      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.16 + 0.1 * tex + s.rim[k]);
       chars[k] = PLANET_G[Math.max(1, Math.round(b * (PLANET_G.length - 1)))];
-      tones[k] = b > 0.8 ? 6 : b > 0.6 ? 12 : b > 0.38 ? 5 : b > 0.15 ? 4 : 3;
+      // stipple: density carries the tone, so the colour barely changes (two violets + the limb)
+      tones[k] = b > 0.7 || s.rim[k] > 0.3 ? 6 : b > 0.22 ? 5 : 4;
     } else if (kd === 2 && s.diff[k] > 0) {
       let u = (s.ringA[k] + ringSpin) / TAU;
       u -= Math.floor(u);
       const tex = RING_TEX[s.ringR[k] * RTW + ((u * RTW) | 0)];
       const b = Math.min(1, tex * s.diff[k] * 1.15);
       chars[k] = RING_G[Math.max(1, Math.round(b * (RING_G.length - 1)))];
-      tones[k] = b > 0.56 ? 8 : b > 0.28 ? 13 : 7;
+      tones[k] = b > 0.4 ? 5 : 4;
     } else {
       chars[k] = 0;
       tones[k] = 0;
@@ -360,7 +361,7 @@ export function renderFrame(s: Scene, t: number) {
   for (const st of s.stars) {
     const tw = Math.sin(t * st.speed + st.phase) + st.level * 0.5;
     if (tw < -0.7) continue;
-    chars[st.k] = G(tw > 1.5 ? "+" : tw > 1.1 ? "*" : ".");
+    chars[st.k] = G(tw > 1.5 ? "+" : tw > 1.1 ? ":" : "·");
     tones[st.k] = tw > 1 ? 2 : tw > 0.4 ? 14 : 1;
   }
 
@@ -405,7 +406,7 @@ export function renderFrame(s: Scene, t: number) {
   };
 
   // glyph and tone carry the parts apart: a bright heavy hull, solid grey fins
-  // and nozzle (never the ring's dashes), a violet porthole, a lime plume
+  // and nozzle (never the ring's dashes), a violet porthole, a violet plume
   for (const pt of ROCKET) {
     const nl = dot([
       side[0] * pt.n[0] + fwd[0] * pt.n[1] + up[0] * pt.n[2],
@@ -413,21 +414,21 @@ export function renderFrame(s: Scene, t: number) {
       side[2] * pt.n[0] + fwd[2] * pt.n[1] + up[2] * pt.n[2],
     ], LIGHT);
     const [x, f, u] = pt.p;
-    if (pt.kind === 2) plot(x, f, u, G("o"), 6);
-    else if (pt.kind === 1) plot(x, f, u, G(Math.abs(nl) > 0.35 ? "#" : "+"), 10);
-    else if (pt.kind === 3) plot(x, f, u, G(nl > 0 ? "%" : "#"), 10);
-    else plot(x, f, u, G(nl > 0.6 ? "@" : nl > 0.3 ? "%" : nl > 0.05 ? "#" : "*"), nl > 0.05 ? 9 : 10);
+    if (pt.kind === 2) plot(x, f, u, G("+"), 6);
+    else if (pt.kind === 1) plot(x, f, u, G(Math.abs(nl) > 0.35 ? ":" : "·"), 5);
+    else if (pt.kind === 3) plot(x, f, u, G(nl > 0 ? ":" : "·"), 5);
+    else plot(x, f, u, G(nl > 0.6 ? "+" : nl > 0.3 ? ":" : "·"), nl > 0.05 ? 6 : 5);
   }
 
-  // exhaust: a lime plume that tapers from a dense core and flickers in length
+  // exhaust: a purple plume that tapers from a dense core and flickers in length
   const flick = mulberry32(Math.floor(t * 20) + 1);
   const len = 2.2 + flick() * 2;
   for (let i = 0; i < 60; i++) {
     const d = Math.pow(flick(), 1.4); // 0 at the nozzle, 1 at the tip
     const r = 0.75 * Math.pow(1 - d, 0.9) * flick();
     const ang = flick() * TAU;
-    const glyph = d < 0.18 ? "@" : d < 0.4 ? "*" : d < 0.7 ? "+" : "'";
-    plot(Math.cos(ang) * r, -2.9 - d * len, Math.sin(ang) * r, G(glyph), 11);
+    const glyph = d < 0.2 ? ":" : d < 0.5 ? "·" : ".";
+    plot(Math.cos(ang) * r, -2.9 - d * len, Math.sin(ang) * r, G(glyph), d < 0.5 ? 5 : 4);
   }
 }
 
@@ -462,13 +463,13 @@ export function frameText(W: number, H: number, t: number) {
 
 /** The two grid sizes: a wide one for desktop and a coarser one for phones.
     Both share the same aspect ratio so swapping them never shifts layout. */
-export const GRID_WIDE = { W: 80, H: 36 } as const;
-export const GRID_NARROW = { W: 60, H: 27 } as const;
+export const GRID_WIDE = { W: 112, H: 50 } as const; // 67.2em × 52.5em box
+export const GRID_NARROW = { W: 80, H: 36 } as const; // 48em × 37.8em box
 export const STATIC_T = 3.4;
 
 // ---- footer horizon: the limb of a huge planet rising at the page's end ----
 
-const HORIZON_RAMP = " .-~=+*#%@";
+const HORIZON_RAMP = " ·.:;+";
 
 type Cell = { ch: string; tone: number };
 
@@ -493,13 +494,13 @@ export const HORIZON_REST: HorizonLight = { sunX: -0.75, spot: 0, spotC: 0, spot
 /**
  * The curved edge of a giant planet seen from low orbit: a thin atmosphere
  * glow along the limb, stars above, and a small rocket climbing away on a
- * lime trail. Geometry is baked here; shadeHorizon() lights it.
+ * violet trail. Geometry is baked here; shadeHorizon() lights it.
  */
 export function createHorizon(W: number, H: number): Horizon {
   const n = W * H;
   const R = W * 1.55; // radius in columns: the limb spans the width with a visible curve
   const cx = W * 0.5;
-  const top = H * (W < 100 ? 0.42 : 0.3); // row where the limb peaks (lower on phones, to fit the rocket)
+  const top = H * 0.42; // row where the limb peaks, low enough to leave room for the rocket above it
   const cy = top + R / ASPECT; // planet centre, far below the band
   const atmo = R + ASPECT * 1.4; // about a row and a half of glow above the limb
   const rand = mulberry32(7 + W);
@@ -537,32 +538,31 @@ export function createHorizon(W: number, H: number): Horizon {
         // fewer stars close to the planet, as if washed out by the glow
         const r = rand();
         const near = Math.min(1, (d - atmo) / (R * 0.06));
-        const underLinks = col > W * 0.8 && row < 3; // keep the sky clear behind the footer links
-        if (underLinks) continue;
-        if (r < 0.006 * near) h.fixed[k] = { ch: "*", tone: 2 };
-        else if (r < 0.03 * near) h.fixed[k] = { ch: ".", tone: r < 0.015 ? 14 : 1 };
-        else if (r < 0.033 * near) h.fixed[k] = { ch: "+", tone: 14 };
+        if (r < 0.006 * near) h.fixed[k] = { ch: "+", tone: 2 };
+        else if (r < 0.03 * near) h.fixed[k] = { ch: "·", tone: r < 0.015 ? 14 : 1 };
+        else if (r < 0.033 * near) h.fixed[k] = { ch: ":", tone: 14 };
       }
     }
   }
 
-  // a small rocket leaving orbit up and to the right, trailing lime exhaust
-  const rc = Math.round(W * (W < 100 ? 0.16 : 0.7)); // narrow grid: out on the left, clear of the links
-  const rr = 1;
-  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
+  // a small rocket lifting straight up off the middle of the limb, its purple
+  // exhaust running back down to the atmosphere it just left
+  const rc = Math.round(W * 0.5);
+  const rr = Math.max(0, Math.floor(top) - 8);
+  for (let r = 0; r < rr + 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
   const put = (r: number, c: number, ch: string, tone: number) => {
     if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = { ch, tone };
   };
-  put(rr, rc, "^", 9);
-  put(rr + 1, rc, "#", 9);
-  put(rr + 2, rc, "#", 10);
-  put(rr + 2, rc - 1, "/", 10);
-  put(rr + 2, rc + 1, "\\", 10);
+  put(rr, rc, "^", 6);
+  put(rr + 1, rc, "+", 6);
+  put(rr + 2, rc, "+", 6);
+  put(rr + 2, rc - 1, "/", 5);
+  put(rr + 2, rc + 1, "\\", 5);
   for (let i = 0; i < 9; i++) {
     const r = rr + 3 + i;
-    const c = rc - Math.round(i * i * 0.28);
+    const c = rc;
     if (r >= H || c < 0 || h.kind[r * W + c] !== 0) break; // stop at the atmosphere
-    put(r, c, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
+    put(r, c, i < 2 ? ":" : "·", i < 3 ? 5 : 4);
   }
   return h;
 }
@@ -588,17 +588,17 @@ export function shadeHorizon(h: Horizon, light: HorizonLight): Run[][] {
       const fixed = h.fixed[k];
       if (fixed) {
         // stars near the pointer flare up; the rocket and its trail stay as they are
-        cell = boost > 0.12 && (fixed.tone === 1 || fixed.tone === 14) ? { ch: fixed.ch === "." ? "*" : "+", tone: 2 } : fixed;
+        cell = boost > 0.12 && (fixed.tone === 1 || fixed.tone === 14) ? { ch: fixed.ch === "·" ? "+" : ":", tone: 2 } : fixed;
       } else if (h.kind[k] === 1) {
         const lit = Math.max(0, h.nx[k] * sun[0] + h.ny[k] * sun[1] + h.nz[k] * sun[2]);
         const b = Math.min(1, lit * (0.15 + 1.05 * h.tex[k]) + 0.55 * h.rim[k] + 0.03 + 0.5 * boost);
         cell = {
           ch: HORIZON_RAMP[Math.max(1, Math.round(b * (HORIZON_RAMP.length - 1)))],
-          tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3,
+          tone: b > 0.6 || h.rim[k] > 0.25 ? 6 : b > 0.2 ? 5 : 4,
         };
       } else if (h.kind[k] === 2) {
         const glow = Math.min(1, h.tex[k] + boost * 0.8);
-        cell = { ch: glow > 0.55 ? ":" : ".", tone: glow > 0.55 ? 6 : 13 };
+        cell = { ch: glow > 0.55 ? ":" : "·", tone: glow > 0.55 ? 6 : 5 };
       }
       const t = cell.ch === " " ? (runs.at(-1)?.tone ?? 0) : cell.tone;
       const last = runs.at(-1);
@@ -615,5 +615,7 @@ export function horizonRuns(W: number, H: number): Run[][] {
   return shadeHorizon(createHorizon(W, H), HORIZON_REST);
 }
 
-export const HORIZON_WIDE = { W: 140, H: 20 } as const;
-export const HORIZON_NARROW = { W: 60, H: 13 } as const;
+// the box is W·0.6em wide and H·1.05em tall: 200×22 is ~277px tall at a 1440px
+// viewport (CSS caps it at 300px); 80×20 is ~170px tall on a 390px phone
+export const HORIZON_WIDE = { W: 200, H: 22 } as const;
+export const HORIZON_NARROW = { W: 80, H: 20 } as const;

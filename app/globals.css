@@ -140,7 +140,7 @@ main:focus {
   justify-content: space-between;
   gap: 0.75rem 2rem;
   padding: clamp(1rem, 2.5vw, 1.6rem) 0 0.75rem;
-  background-image: var(--dots);
+  background-image: linear-gradient(var(--hairline-2), var(--hairline-2));
   background-size: 100% 1px;
   background-position: bottom;
   background-repeat: no-repeat;
@@ -313,25 +313,27 @@ main:focus {
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.75rem;
+  margin-bottom: 0.25rem;
   font-family: var(--mono);
   font-size: 0.8rem;
   font-weight: 400;
   color: var(--ink);
 }
 
-.section-cmd,
-.section-aside {
-  white-space: nowrap;
+.section-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 5vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
-.section-rule {
-  flex: 1;
-  min-width: 1.5rem;
-  height: 1px;
-  background-image: var(--dots);
+.section-aside {
+  white-space: nowrap;
 }
 
 .section-aside {
@@ -437,11 +439,11 @@ main:focus {
 
 .hero-title {
   margin: 1.25rem 0 0;
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: clamp(2.6rem, 5.4vw, 4.75rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.8rem, 5.6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -554,13 +556,13 @@ main:focus {
   /* on short landscape screens, shrink the planet to fit the fold */
   justify-self: end;
   width: calc(100% + var(--gutter));
-  max-width: calc((100svh - 14rem) * 48 / 37.8);
+  max-width: calc((100svh - 14rem) * 1.28);
 }
 
 .ascii-scene {
   position: relative;
-  /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
-  aspect-ratio: 48 / 37.8;
+  /* 112 × 50 cells at 0.6em × 1.05em → keep the box at that ratio */
+  aspect-ratio: 128 / 100;
   transform-style: preserve-3d;
 }
 
@@ -575,17 +577,17 @@ main:focus {
   margin: 0;
   font-family: var(--mono);
   font-variant-ligatures: none; /* keep "==" and "--" as separate cells */
-  font-size: calc(100cqi / 48);
+  font-size: calc(100cqi / 67.2); /* 112 cols × 0.6em */
   line-height: 1.05;
   white-space: pre;
   overflow: hidden;
   user-select: none;
 }
 
-/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
+/* 80 × 36 cells → 48em wide; same box ratio as the wide grid */
 .ascii-static--narrow {
   display: none;
-  font-size: calc(100cqi / 36);
+  font-size: calc(100cqi / 48);
 }
 
 /* phones get the coarser grid, matching what the canvas switches to */
@@ -648,7 +650,7 @@ main:focus {
 }
 
 .post-item {
-  background-image: var(--dots);
+  background-image: linear-gradient(var(--hairline-2), var(--hairline-2));
   background-size: 100% 1px;
   background-position: bottom;
   background-repeat: no-repeat;
@@ -684,11 +686,11 @@ main:focus {
 }
 
 .post-title {
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.45rem, 2.4vw, 1.9rem);
   line-height: 1.15;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
@@ -727,28 +729,23 @@ main:focus {
 .project-grid {
   list-style: none;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--hairline-2);
 }
 
-/* the whole cell is the hit area (the name link stretches over it); the
-   links row sits above that layer and is pinned to the bottom so rows align */
+/* one row per project: name and year on the left, description on the right.
+   The whole row is the hit area (the name link stretches over it); the links
+   row sits above that layer. */
 .project-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.5rem 1.5rem 0;
-  border-bottom: 1px solid var(--hairline);
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  column-gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start;
+  padding: clamp(1.25rem, 2.4vw, 1.75rem) 0;
+  border-bottom: 1px solid var(--hairline-2);
 }
 
-.project-card + .project-card {
-  padding-left: 1.5rem;
-  border-left: 1px solid var(--hairline);
-}
-
-/* a short lime tick on the top rule marks the hovered / focused card */
+/* a short lime tick on the top rule marks the hovered / focused row */
 .project-card::before {
   content: "";
   position: absolute;
@@ -762,21 +759,26 @@ main:focus {
   transition: transform 0.2s ease;
 }
 
-.project-card + .project-card::before {
-  left: 1.5rem;
-}
-
 .project-card:hover::before,
 .project-card:focus-within::before {
   transform: scaleX(1);
 }
 
 .project-card-name {
-  margin: 0.5rem 0 0.4rem;
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.project-card-meta {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0.4rem;
 }
 
 .project-card-name a {
@@ -814,25 +816,26 @@ main:focus {
 
 /* less text: clamped on the home page; the full line is on /projects */
 .project-card-desc {
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0.2rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 1.3vw, 1.18rem);
+  line-height: 1.45;
+  color: var(--ink-2);
+  text-wrap: pretty;
 }
 
 /* paper · demo · blog post, mono and quiet; each link is a 44px-tall target */
 .project-card-links {
   position: relative;
   z-index: 1;
+  grid-column: 2;
+  grid-row: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 0 1.25rem;
-  margin-top: auto;
-  padding-top: 0.5rem;
+  margin-top: 0.25rem;
   font-family: var(--mono);
   font-size: 0.78rem;
 }
@@ -1539,7 +1542,7 @@ code[data-theme] span {
   font-size: 0.74rem;
 }
 
-/* two quiet links in the sky, aligned to the page's right edge */
+/* wordmark on the left, one row of readable links on the right */
 .foot-inner {
   position: relative;
   z-index: 1;
@@ -1547,18 +1550,28 @@ code[data-theme] span {
   margin: 0 auto;
   padding: 0 var(--gutter);
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+}
+
+.foot-inner .brand-word {
+  font-size: 1.6rem;
 }
 
 .foot-links {
   display: flex;
-  gap: 1.75rem;
+  flex-wrap: wrap;
+  gap: 0 1.75rem;
+  font-size: 0.95rem;
 }
 
 .foot-links a {
-  display: inline-block;
-  padding: 0.75rem 0;
-  color: var(--dim);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-2);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -1567,13 +1580,14 @@ code[data-theme] span {
 }
 
 .foot-links a:hover {
-  color: var(--ink);
+  color: var(--lime);
   text-decoration-color: var(--lime);
 }
 
-/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
+/* the horizon art: 200 columns (80 on narrow screens) at 0.6em each, so it
+   spans the width; the font is capped so the art never grows past ~300px tall */
 .foot-horizon {
-  margin-top: -1.5rem;
+  margin-top: clamp(1rem, 2.5vw, 2rem);
   user-select: none;
 }
 
@@ -1587,12 +1601,14 @@ code[data-theme] span {
 }
 
 .foot-art--wide {
-  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
+  width: max-content;
+  margin-inline: auto;
+  font-size: min(calc(100cqi / 120), 12.9px); /* 200 cols × 0.6em, ≤ 300px tall */
 }
 
 .foot-art--narrow {
   display: none;
-  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
+  font-size: calc(100cqi / 48); /* 80 cols × 0.6em */
 }
 
 @container (max-width: 639.98px) {
@@ -1609,24 +1625,6 @@ code[data-theme] span {
    ============================================================ */
 
 @media (max-width: 60rem) {
-  .project-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .project-card:nth-child(odd) {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .project-card:nth-child(even) {
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--hairline);
-  }
-  .project-card:nth-child(odd)::before {
-    left: 0;
-  }
-  .project-card-desc {
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
   .post-main {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 1.4rem 0;
@@ -1641,6 +1639,32 @@ code[data-theme] span {
 }
 
 @media (max-width: 48rem) {
+  /* phones: one column per project, name → year/link → description → links */
+  .project-card {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.4rem;
+  }
+  .project-card-name,
+  .project-card-meta,
+  .project-card-desc,
+  .project-card-links {
+    grid-column: 1;
+    grid-row: auto;
+    margin: 0;
+  }
+  .project-card-name {
+    order: 0;
+  }
+  .project-card-meta {
+    order: 1;
+  }
+  .project-card-desc {
+    order: 2;
+    margin-top: 0.4rem;
+  }
+  .project-card-links {
+    order: 3;
+  }
   .hero {
     grid-template-columns: 1fr;
     align-content: start;
@@ -1671,17 +1695,6 @@ code[data-theme] span {
     flex-wrap: nowrap;
     gap: 0 0.9rem;
     font-size: 0.75rem;
-  }
-  .project-grid {
-    grid-template-columns: 1fr;
-  }
-  .project-card,
-  .project-card:nth-child(even) {
-    padding: 1.25rem 0;
-    border-left: 0;
-  }
-  .project-card:nth-child(even)::before {
-    left: 0;
   }
   .log-row {
     grid-template-columns: 1fr;

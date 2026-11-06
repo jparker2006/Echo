@@ -201,6 +201,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const L: [number, number, number] = [0.55 / lm, 0.5 / lm, 0.42 / lm]; // light: right, up, toward viewer
   const spin = t * 0.05;
   const B = 8;
+  const BODY_B = 24; // fine tonal steps on the body, so no step reads as a fold
   const NL = Math.round(136 * q);
   const NS = Math.round(260 * q);
   const NU = Math.round(180 * q);
@@ -255,28 +256,31 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
 
   // engraving: latitude lines, displaced by the wave field and bunched by light
   for (let k = 0; k < NL; k++) {
-    const ph = -1.5 + (3 * (k + 0.5)) / NL;
+    const ph = -Math.PI / 2 + (Math.PI * (k + 0.5)) / NL; // pole to pole, no bald cap
     const cp = Math.cos(ph);
     const sp = Math.sin(ph);
     const xy: number[] = [];
     const bright: number[] = [];
     const ok: boolean[] = [];
-    for (let j = 0; j < NS; j++) {
-      const th = (TAU * j) / NS;
-      const al = th + spin;
+    // each ring is closed (j runs to NS, back onto its first point) and starts
+    // on the far side, so the engraving wraps the sphere with no seam
+    for (let j = 0; j <= NS; j++) {
+      const al = Math.PI + (TAU * j) / NS;
+      const th = al - spin; // body-fixed longitude: the pattern turns with the planet
       const w = bodyWave(th, ph, t);
-      const r = R * (1 + 0.03 * w);
       const X = cp * Math.sin(al);
       const Y = sp;
       const Z = cp * Math.cos(al);
       const y2 = Y * cT - Z * sT;
       const z2 = Y * sT + Z * cT;
+      // relief fades to nothing at the limb, so the silhouette stays a clean circle
+      const r = R * (1 + 0.05 * w * Math.max(0, z2));
       xy.push(cx + r * X, cy - r * y2);
       ok.push(z2 > 0);
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
-      bright.push(clamp01(0.26 + 0.7 * Math.max(0, d) ** 1.0 + 0.1 * w + 0.12 * (1 - z2) ** 4));
+      bright.push(clamp01(0.26 + 0.66 * Math.max(0, d) ** 1.0 + 0.17 * w + 0.12 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroTealFor);
+    strokeSeries(p, xy, bright, ok, null, BODY_B, 1.35, heroTealFor);
   }
 
   // crisp limb, and a thin burnt-orange glow on the lit side

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
-import { Shell, SectionHead } from "@/components/chrome";
+import { Shell } from "@/components/chrome";
 import { AsciiScene } from "@/components/ascii-art";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
+
+// external URLs and static files open in a new tab; app routes stay in-tab
+const isFile = (href: string) => /^https?:\/\//.test(href) || /\.\w+$/.test(href);
 
 export default function Home() {
   const posts = getAllPosts();
@@ -21,32 +24,29 @@ export default function Home() {
       {latest ? (
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="kicker" data-reveal>
-              latest
-              <span className="kicker-sep" aria-hidden="true">
-                /
-              </span>
+            <p className="hero-kicker" data-reveal>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+              <span className="kicker-sep" aria-hidden="true">
+                |
+              </span>
+              {latest.minutes} min
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
             </h2>
-            <p className="hero-copy-dek" data-reveal>
+            <p className="hero-dek" data-reveal>
               {firstSentence(latest.excerpt)}
             </p>
-            <p className="hero-actions" data-reveal>
+            <p className="hero-cmd" data-reveal>
               <Link href={`/posts/${latest.slug}`} className="cmd-link">
-                <span className="cta-cmd">
-                  <span className="cmd-sigil" aria-hidden="true">
-                    $
-                  </span>{" "}
-                  cat {latest.slug}.md
-                </span>
-                <span className="cta-hint">
-                  read <span className="cta-key" aria-hidden="true">↵</span>
+                <span className="cmd-sigil" aria-hidden="true">
+                  $
+                </span>{" "}
+                cat {latest.slug}.md
+                <span className="cmd-read">
+                  read <span aria-hidden="true">↵</span>
                 </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>
@@ -56,38 +56,38 @@ export default function Home() {
       ) : null}
 
       <section className="home-section" aria-labelledby="posts-head">
-        <SectionHead
-          id="posts-head"
-          command="ls /posts"
-          aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
-        />
+        <div className="home-head" data-reveal>
+          <h2 className="home-title" id="posts-head">
+            posts
+          </h2>
+          <p className="home-aside">{`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}</p>
+        </div>
         <ol className="post-list">
           {posts.map((post) => (
-            <li key={post.slug} className="post-item" data-reveal-row>
-              <div className="post-main">
-                <p className="post-date">
-                  <time dateTime={post.date}>{formatDate(post.date)}</time>
-                </p>
-                <h3 className="post-title">
-                  <Link href={`/posts/${post.slug}`}>{post.title}</Link>
-                </h3>
-                <p className="post-date post-read">{post.minutes} min</p>
-              </div>
+            <li key={post.slug} className="post-row" data-reveal-row>
+              <time className="post-row-date" dateTime={post.date}>
+                {formatDate(post.date)}
+              </time>
+              <h3 className="post-row-title">
+                <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+              </h3>
+              <p className="post-row-min">{post.minutes} min</p>
             </li>
           ))}
         </ol>
       </section>
 
       <section className="home-section" aria-labelledby="projects-head">
-        <SectionHead
-          id="projects-head"
-          command="ls /projects"
-          aside={<Link href="/projects">all {projects.length} →</Link>}
-        />
-        <ul className="project-grid">
+        <div className="home-head" data-reveal>
+          <h2 className="home-title" id="projects-head">
+            projects
+          </h2>
+          <Link className="home-aside home-all" href="/projects">
+            all {projects.length} →
+          </Link>
+        </div>
+        <ul className="project-list">
           {picks.map((project) => {
-            // external URLs and static files open in a new tab; app routes stay in-tab
-            const isFile = (href: string) => /^https?:\/\//.test(href) || /\.\w+$/.test(href);
             // the name links to the primary URL; the row below holds the rest,
             // in the /projects order (paper · demo · blog post), minus duplicates
             const links = [
@@ -106,51 +106,55 @@ export default function Home() {
                   : new URL(project.url).hostname
               : null;
             return (
-              <li key={project.name} className="project-card" data-reveal-row>
-                <p className="post-date project-card-meta">
-                  {project.year}
-                  {where ? (
-                    <>
-                      <span className="kicker-sep" aria-hidden="true">
-                        /
-                      </span>
-                      {where}
-                    </>
-                  ) : null}
-                </p>
-                <h3 className="project-card-name">
-                  {project.url ? (
-                    isFile(project.url) ? (
-                      <a href={project.url} target="_blank" rel="noreferrer">
-                        {project.name}
-                        <span className="project-card-ext" aria-hidden="true">
-                          ↗
-                        </span>
-                        <span className="sr-only"> (opens in a new tab)</span>
-                      </a>
-                    ) : (
-                      <Link href={project.url}>{project.name}</Link>
-                    )
-                  ) : (
-                    project.name
-                  )}
-                </h3>
-                <p className="project-card-desc">{project.description}</p>
-                {links.length ? (
-                  <p className="project-card-links">
-                    {links.map((link) =>
-                      isFile(link.href) ? (
-                        <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
-                          {link.label}
+              <li key={project.name} className="project-row" data-reveal-row>
+                <div className="project-id">
+                  <h3 className="project-name">
+                    {project.url ? (
+                      isFile(project.url) ? (
+                        <a href={project.url} target="_blank" rel="noreferrer">
+                          {project.name}
+                          <span className="project-ext" aria-hidden="true">
+                            ↗
+                          </span>
+                          <span className="sr-only"> (opens in a new tab)</span>
                         </a>
                       ) : (
-                        <Link key={link.label} href={link.href}>
-                          {link.label}
-                        </Link>
+                        <Link href={project.url}>{project.name}</Link>
                       )
+                    ) : (
+                      project.name
                     )}
+                  </h3>
+                  <p className="project-meta">
+                    {project.year}
+                    {where ? (
+                      <>
+                        <span className="kicker-sep" aria-hidden="true">
+                          |
+                        </span>
+                        {where}
+                      </>
+                    ) : null}
                   </p>
-                ) : null}
+                </div>
+                <div className="project-body">
+                  <p className="project-desc">{project.description}</p>
+                  {links.length ? (
+                    <p className="project-links">
+                      {links.map((link) =>
+                        isFile(link.href) ? (
+                          <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link key={link.label} href={link.href}>
+                            {link.label}
+                          </Link>
+                        )
+                      )}
+                    </p>
+                  ) : null}
+                </div>
               </li>
             );
           })}

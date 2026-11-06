@@ -16,7 +16,7 @@ export const PALETTE = [
   "transparent",
   "#46425a", // 1 star, dim
   "#c4c0d4", // 2 star, bright
-  "#3a2675", // 3 planet, night side
+  "#4f33a8", // 3 planet, night side
   "#5c37c4", // 4 planet, dusk
   "#844ff0", // 5 planet, day
   "#cba8ff", // 6 planet, highlight
@@ -31,8 +31,8 @@ export const PALETTE = [
 ];
 
 // planet and ring use different glyphs, so the ring stays a ring where it crosses the disc
-const PLANET_RAMP = " .:;+*#%@";
-const RING_RAMP = " .-=";
+const PLANET_RAMP = " .'`:-~=+01";
+const RING_RAMP = " .'`-~=";
 const BODY_RAMP = ".:-=+#%@";
 
 type V3 = [number, number, number];
@@ -224,7 +224,7 @@ export type Scene = {
   zb: Float32Array;
 };
 
-export const GLYPHS = Array.from(new Set((" " + PLANET_RAMP + RING_RAMP + BODY_RAMP + "o^*'+.").split(""))).join("");
+export const GLYPHS = Array.from(new Set((" " + PLANET_RAMP + RING_RAMP + BODY_RAMP + "o^*'+.@%#/\\:-").split(""))).join("");
 const G = (ch: string) => GLYPHS.indexOf(ch);
 const PLANET_G = PLANET_RAMP.split("").map(G);
 const RING_G = RING_RAMP.split("").map(G);
@@ -233,9 +233,9 @@ const TAU = Math.PI * 2;
 
 export function createScene(W: number, H: number): Scene {
   const n = W * H;
-  const R = W * 0.215;
-  const RIN = R * 1.25;
-  const ROUT = R * 2.12;
+  const R = W * 0.25;
+  const RIN = R * 1.4; // wide gap between the disc and the ring
+  const ROUT = R * 2.0;
   const GAP0 = RIN + (ROUT - RIN) * 0.6, GAP1 = RIN + (ROUT - RIN) * 0.7; // Cassini gap
   const cx = W / 2, cy = H / 2;
 
@@ -316,7 +316,7 @@ export function createScene(W: number, H: number): Scene {
   const rand = mulberry32(2006 + W);
   for (let k = 0; k < n; k++) {
     const r = rand();
-    if (s.kind[k] !== 0 || r >= 0.034) continue;
+    if (s.kind[k] !== 0 || r >= 0.022) continue;
     const x = (k % W) + 0.5 - cx;
     const y = (cy - (((k / W) | 0) + 0.5)) * ASPECT;
     const rz = -(RING_N[0] * x + RING_N[1] * y) / RING_N[2];
@@ -341,7 +341,7 @@ export function renderFrame(s: Scene, t: number) {
       const v = s.lat[k] / Math.PI + 0.5;
       const tex = PLANET_TEX[Math.min(TH - 1, (v * (TH - 1)) | 0) * TW + ((u * TW) | 0)];
       // the belts modulate the light; a little ambient keeps the night side a disc
-      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.07 + 0.1 * tex + s.rim[k]);
+      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.14 + 0.12 * tex + s.rim[k]);
       chars[k] = PLANET_G[Math.max(1, Math.round(b * (PLANET_G.length - 1)))];
       tones[k] = b > 0.8 ? 6 : b > 0.6 ? 12 : b > 0.38 ? 5 : b > 0.15 ? 4 : 3;
     } else if (kd === 2 && s.diff[k] > 0) {
@@ -462,13 +462,13 @@ export function frameText(W: number, H: number, t: number) {
 
 /** The two grid sizes: a wide one for desktop and a coarser one for phones.
     Both share the same aspect ratio so swapping them never shifts layout. */
-export const GRID_WIDE = { W: 80, H: 36 } as const;
-export const GRID_NARROW = { W: 60, H: 27 } as const;
+export const GRID_WIDE = { W: 112, H: 50 } as const;
+export const GRID_NARROW = { W: 64, H: 29 } as const;
 export const STATIC_T = 3.4;
 
 // ---- footer horizon: the limb of a huge planet rising at the page's end ----
 
-const HORIZON_RAMP = " .-~=+*#%@";
+const HORIZON_RAMP = " .'`:-~=+01";
 
 type Cell = { ch: string; tone: number };
 
@@ -499,7 +499,7 @@ export function createHorizon(W: number, H: number): Horizon {
   const n = W * H;
   const R = W * 1.55; // radius in columns: the limb spans the width with a visible curve
   const cx = W * 0.5;
-  const top = H * (W < 100 ? 0.42 : 0.3); // row where the limb peaks (lower on phones, to fit the rocket)
+  const top = H * 0.5; // row where the limb peaks, with room above for the rocket
   const cy = top + R / ASPECT; // planet centre, far below the band
   const atmo = R + ASPECT * 1.4; // about a row and a half of glow above the limb
   const rand = mulberry32(7 + W);
@@ -537,8 +537,6 @@ export function createHorizon(W: number, H: number): Horizon {
         // fewer stars close to the planet, as if washed out by the glow
         const r = rand();
         const near = Math.min(1, (d - atmo) / (R * 0.06));
-        const underLinks = col > W * 0.8 && row < 3; // keep the sky clear behind the footer links
-        if (underLinks) continue;
         if (r < 0.006 * near) h.fixed[k] = { ch: "*", tone: 2 };
         else if (r < 0.03 * near) h.fixed[k] = { ch: ".", tone: r < 0.015 ? 14 : 1 };
         else if (r < 0.033 * near) h.fixed[k] = { ch: "+", tone: 14 };
@@ -546,10 +544,12 @@ export function createHorizon(W: number, H: number): Horizon {
     }
   }
 
-  // a small rocket leaving orbit up and to the right, trailing lime exhaust
-  const rc = Math.round(W * (W < 100 ? 0.16 : 0.7)); // narrow grid: out on the left, clear of the links
-  const rr = 1;
-  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
+  // a small rocket lifting straight off the limb: nose up, lime exhaust down into the glow
+  const rc = Math.round(W / 2);
+  const rr = Math.max(0, Math.round(top) - 9); // the nose sits about nine rows above the limb
+  for (let r = rr - 1; r < rr + 12; r++)
+    for (let c = rc - 4; c <= rc + 4; c++)
+      if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = null;
   const put = (r: number, c: number, ch: string, tone: number) => {
     if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = { ch, tone };
   };
@@ -560,9 +560,8 @@ export function createHorizon(W: number, H: number): Horizon {
   put(rr + 2, rc + 1, "\\", 10);
   for (let i = 0; i < 9; i++) {
     const r = rr + 3 + i;
-    const c = rc - Math.round(i * i * 0.28);
-    if (r >= H || c < 0 || h.kind[r * W + c] !== 0) break; // stop at the atmosphere
-    put(r, c, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
+    if (r >= H || h.kind[r * W + rc] !== 0) break; // stop just above the atmosphere
+    put(r, rc, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
   }
   return h;
 }
@@ -615,5 +614,5 @@ export function horizonRuns(W: number, H: number): Run[][] {
   return shadeHorizon(createHorizon(W, H), HORIZON_REST);
 }
 
-export const HORIZON_WIDE = { W: 140, H: 20 } as const;
-export const HORIZON_NARROW = { W: 60, H: 13 } as const;
+export const HORIZON_WIDE = { W: 180, H: 20 } as const;
+export const HORIZON_NARROW = { W: 72, H: 14 } as const;

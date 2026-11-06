@@ -41,39 +41,26 @@ export function Prompt({ command }: { command: string }) {
   );
 }
 
-/** Mono section heading with a dotted rule and an optional right-hand note,
-    e.g. `ls /posts ··········· 2 posts`. */
-export function SectionHead({
-  id,
-  command,
-  aside,
-}: {
-  id?: string;
-  command: string;
-  aside?: ReactNode;
-}) {
-  return (
-    <h2 className="section-head" id={id} data-reveal>
-      <span className="section-cmd">
-        <span className="cmd-sigil">$</span> {command}
-      </span>
-      <span className="section-rule" aria-hidden="true" />
-      {aside ? <span className="section-aside">{aside}</span> : null}
-    </h2>
-  );
-}
-
-/** The page ends on a horizon: the limb of a huge purple planet in ASCII,
-    full-bleed, with two quiet links in the sky above it. One still frame per
-    grid size; CSS shows the one that fits, and HorizonLive re-lights it to
-    follow the mouse. */
+/** The page ends on a footer: the wordmark and one row of links above a
+    horizon, the limb of a huge purple planet built from tiny characters with a
+    rocket lifting off it. One still frame per grid size; CSS shows the one
+    that fits, and HorizonLive re-lights it to follow the mouse. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <Link href="/" className="foot-brand" aria-label="echo, home">
+          <span>echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </Link>
         <nav className="foot-links" aria-label="Elsewhere">
-          <a href="/rss.xml">rss</a>
+          <Link href="/">posts</Link>
+          <Link href="/projects">projects</Link>
+          <Link href="/about">about</Link>
           <a href="https://github.com/jparker2006">github</a>
+          <a href="/rss.xml">rss</a>
         </nav>
       </div>
       <HorizonLive>

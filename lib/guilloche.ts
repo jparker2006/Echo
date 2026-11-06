@@ -50,6 +50,12 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 function tealFor(b: number): RGB {
   return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
 }
+/** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
+const HERO_DEEP: RGB = [13, 50, 60];
+const HERO_LIGHT: RGB = [104, 178, 190];
+function heroTealFor(b: number): RGB {
+  return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
+}
 
 // ---- noise: seeded starfields and smooth value noise (periodic when fed a circle) ----
 
@@ -94,7 +100,8 @@ function strokeRun(
   i0: number,
   i1: number,
   B: number,
-  gain: number
+  gain: number,
+  ramp: (b: number) => RGB
 ) {
   let cur: number[] = [];
   let key = -1;
@@ -103,7 +110,7 @@ function strokeRun(
       const bi = key >> 1;
       const b = (bi + 0.5) / B;
       if (key & 1) p.line(cur, mix(ORANGE, ORANGE_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
-      else p.line(cur, tealFor(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
+      else p.line(cur, ramp(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
     }
     cur = [];
   };
@@ -129,7 +136,8 @@ function strokeSeries(
   ok: boolean[] | null,
   warm: boolean[] | null,
   B: number,
-  gain = 1
+  gain = 1,
+  ramp: (b: number) => RGB = tealFor
 ) {
   const n = bright.length;
   let i = 0;
@@ -140,7 +148,7 @@ function strokeSeries(
     }
     let j = i;
     while (j + 1 < n && (!ok || ok[j + 1])) j++;
-    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain);
+    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain, ramp);
     i = j + 1;
   }
 }
@@ -192,23 +200,17 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const lm = Math.hypot(0.55, 0.5, 0.42);
   const L: [number, number, number] = [0.55 / lm, 0.5 / lm, 0.42 / lm]; // light: right, up, toward viewer
   const spin = t * 0.05;
-  const B = q >= 1 ? 8 : 3;
-  const NL = Math.round(96 * q);
-  const NS = Math.round(220 * q);
-  const NU = Math.round(160 * q);
-  const NR = Math.round(22 * q);
+  const B = 32; // fine steps: coarse brightness buckets show as hard vertical edges
+  const NL = Math.round(136 * q);
+  const NS = Math.round(260 * q);
+  const NU = Math.round(180 * q);
+  const NR = Math.round(28 * q);
   const psi = -0.32;
 
   starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
 
-  // warm halo in the sky
-  p.disc(cx, cy, R * 1.28, [
-    [0.78, ORANGE, 0],
-    [0.86, ORANGE, 0.11],
-    [1, ORANGE, 0],
-  ]);
-
-  // rings, back half (drawn under the body)
+  // rings, back half (drawn under the body). Teal everywhere; burnt orange
+  // only where the ring catches the sun.
   const ringPass = (front: boolean) => {
     for (let i = 0; i < NR; i++) {
       const a = R * (1.32 + (0.66 * i) / Math.max(1, NR - 1));
@@ -222,10 +224,10 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
         xy.push(cx + sx, cy - sy);
         const lit = (sx * L[0] + sy * L[1]) / a;
         ok.push(z > 0 === front);
-        warm.push(front && lit > 0.45);
+        warm.push(lit > 0.45);
         bright.push(front ? 0.3 + 0.55 * Math.max(0, lit) : 0.14);
       }
-      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5);
+      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5, heroTealFor);
     }
   };
   // one dotted outer orbit
@@ -243,9 +245,9 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     cy,
     R,
     [
-      [0, [22, 66, 76], 1],
-      [0.6, [7, 27, 32], 1],
-      [1, [3, 12, 15], 1],
+      [0, [18, 58, 68], 1],
+      [0.6, [6, 24, 29], 1],
+      [1, [2, 10, 13], 1],
     ],
     cx + L[0] * R * 0.4,
     cy - L[1] * R * 0.4
@@ -253,17 +255,19 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
 
   // engraving: latitude lines, displaced by the wave field and bunched by light
   for (let k = 0; k < NL; k++) {
-    const ph = -1.5 + (3 * (k + 0.5)) / NL;
+    const ph = -Math.PI / 2 + (Math.PI * (k + 0.5)) / NL; // pole to pole, no cap hole
     const cp = Math.cos(ph);
     const sp = Math.sin(ph);
     const xy: number[] = [];
     const bright: number[] = [];
     const ok: boolean[] = [];
-    for (let j = 0; j < NS; j++) {
-      const th = (TAU * j) / NS;
+    // each latitude is a closed loop: sample all the way round (j = NS meets
+    // j = 0) and start on the far side, so no break ever faces the viewer
+    for (let j = 0; j <= NS; j++) {
+      const th = Math.PI - spin + (TAU * j) / NS;
       const al = th + spin;
       const w = bodyWave(th, ph, t);
-      const r = R * (1 + 0.03 * w);
+      const r = R * (1 + 0.03 * w * cp); // relief fades out at the poles, no pinch
       const X = cp * Math.sin(al);
       const Y = sp;
       const Z = cp * Math.cos(al);
@@ -272,12 +276,12 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
       xy.push(cx + r * X, cy - r * y2);
       ok.push(z2 > 0);
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
-      bright.push(clamp01(0.06 + 0.78 * Math.max(0, d) ** 1.3 + 0.1 * w + 0.2 * (1 - z2) ** 4));
+      bright.push(clamp01(0.26 + 0.7 * Math.max(0, d) ** 1.0 + 0.1 * w + 0.12 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B);
+    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroTealFor);
   }
 
-  // crisp limb, and a burnt-orange rim on the lit side
+  // crisp limb, and a thin burnt-orange glow on the lit side
   const limb: number[] = [];
   for (let j = 0; j <= 120; j++) {
     const a = (TAU * j) / 120;
@@ -286,8 +290,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   p.line(limb, TEAL, 0.6, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
-    [1.1, 0.8, 7, 0.07],
-    [1.0, 0.8, 3, 0.2],
+    [0.9, 0.8, 2.4, 0.22],
     [0.9, 0.8, 1.1, 0.95],
   ] as const) {
     const arc: number[] = [];
@@ -306,13 +309,32 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
 // footer horizon
 // ============================================================
 
-/** Vertical wave on each concentric arc of the horizon. */
-function arcWave(xs: number, k: number, t: number) {
-  return (
-    0.5 * Math.sin(11 * xs + 0.35 * k + 0.22 * t) +
-    0.35 * Math.sin(23 * xs - 0.2 * k - 0.31 * t + 1.7) +
-    0.6 * (2 * noise(xs * 5 + 3, k * 0.22 + 0.04 * t) - 1)
-  );
+/** Craters on the footer planet: [x across the width (-0.5..0.5), depth (0 limb..1 front), radius]. */
+const CRATERS: readonly [number, number, number][] = [
+  [-0.3, 0.62, 0.075],
+  [0.24, 0.72, 0.1],
+  [0.4, 0.34, 0.05],
+  [-0.06, 0.9, 0.06],
+  [-0.43, 0.3, 0.045],
+  [0.08, 0.42, 0.04],
+];
+
+/** Terrain height for the footer engraving: layered noise ridges plus crater rims.
+    Fed (x across the planet, depth from the limb); neighbouring arcs sample nearby
+    depths, so they bunch and part together and the lines read as relief. */
+function terrain(xs: number, v: number, t: number) {
+  const u = xs + t * 0.004; // the planet turns slowly under the rocket
+  let h =
+    0.55 * (2 * noise(u * 6 + 3, v * 3.2) - 1) +
+    0.3 * (2 * noise(u * 14 + 9, v * 7 + 4) - 1) +
+    0.15 * (2 * noise(u * 31 + 1, v * 15 + 8) - 1);
+  h = Math.sign(h) * Math.abs(h) ** 0.8; // sharpen ridges a little
+  for (const [xc, vc, r] of CRATERS) {
+    const cxw = ((xc - u + 0.8) % 1.6 + 1.6) % 1.6 - 0.8; // wrap round as it turns
+    const d = Math.hypot(cxw / r, (v - vc) / (r * 2.6));
+    if (d < 2.2) h += 1.2 * Math.exp(-(((d - 1) / 0.28) ** 2)) - 0.7 * Math.exp(-((d / 0.65) ** 2));
+  }
+  return h;
 }
 
 /** Draws the planet limb, its trails, stars and the rocket on its exhaust.
@@ -325,7 +347,7 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
   const cy = y0 + Rf;
   const B = q >= 1 ? 8 : 2;
   const step = q >= 1 ? Math.max(2.4, H / 120) : Math.max(5, H / 50);
-  const NX = Math.round(240 * q);
+  const NX = Math.round(420 * q);
   const K = Math.ceil(s / step) + 2;
   const sunX = light.sunX;
   const spotR2 = (0.1 * W) ** 2;
@@ -365,59 +387,87 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
     }
   });
 
-  // the planet: concentric arcs, each one waved; the top arc is the limb
-  for (let k = 0; k < K; k++) {
+  // the planet: concentric arcs displaced by the terrain; the top arc is the limb.
+  // Relief grows toward the viewer (the limb is foreshortened) and never rises
+  // above the limb, so the horizon stays one crisp line.
+  const limbY = (x: number) => cy - Math.sqrt(Math.max(0, Rf * Rf - (x - cx) * (x - cx)));
+  for (let k = K - 1; k >= 0; k--) {
     const r = Rf - k * step;
-    const amp = step * 1.5 * Math.min(1, 0.3 + k / 6);
+    const v = k / K;
+    const amp = k === 0 ? 0 : step * (1.2 + 5 * v) * Math.min(1, k / 4);
     const xy: number[] = [];
     const bright: number[] = [];
     for (let i = 0; i <= NX; i++) {
       const x = -0.02 * W + (1.04 * W * i) / NX;
       const dx = x - cx;
-      const ysq = Math.max(0, r * r - dx * dx);
-      const xs = dx / W;
-      const w = arcWave(xs, k, t);
-      const y = cy - Math.sqrt(ysq) + amp * w;
+      const h = k === 0 ? 0 : terrain(dx / W, v, t);
+      const y = Math.max(limbY(x) + 0.8, cy - Math.sqrt(Math.max(0, r * r - dx * dx)) - amp * h);
       xy.push(x, y);
-      const depth = 1 - (0.35 * k) / K;
-      bright.push(clamp01((0.16 + 0.42 * sun(x) + 0.45 * spot(x, y) + 0.12 * w) * depth + 0.2 * Math.max(0, 1 - k / 10)));
+      const depth = 1 - 0.3 * v;
+      bright.push(
+        clamp01((0.26 + 0.42 * sun(x) + 0.45 * spot(x, y) + 0.16 * h) * depth + 0.22 * Math.max(0, 1 - k / 8))
+      );
     }
-    strokeSeries(p, xy, bright, null, null, B);
+    strokeSeries(p, xy, bright, null, null, B, k === 0 ? 1 : 1.15, heroTealFor);
 
     if (k === 0) {
-      // the limb: a soft orange glow, then the crisp warm line where the sun falls
-      p.line(xy, ORANGE, 0.12, 7);
-      const warmAll = xy.map(() => true);
-      strokeSeries(p, xy, bright.map((b) => clamp01(0.35 + 0.65 * b)), null, warmAll, B);
+      // the horizon: a thin burnt-orange glow and a crisp hot line, strongest where the sun falls
+      const C = 4;
+      for (let i = 0; i + C <= NX; i += C) {
+        const g = Math.exp(-(((xy[2 * i + C] - sunX) / (0.42 * W)) ** 2));
+        if (g < 0.04) continue;
+        const seg = xy.slice(2 * i, 2 * (i + C) + 2);
+        p.line(seg, ORANGE, 0.26 * g, 3.5);
+        p.line(seg, mix(ORANGE, ORANGE_HOT, 0.35 * g * g), Math.min(1, 1.25 * g), 1.5);
+      }
     }
   }
 
-  // the rocket: a slim body lifting off the limb, its thin plume trailing down to the limb
-  const h = Math.max(16, Math.min(34, H * 0.11));
-  const tailY = y0 - H * 0.2; // rocket tail; the plume runs from here down to the limb
+  // the rocket, the focal point: a slim body lifting off the limb, its thin plume
+  // trailing straight down to a hot spot on the horizon
+  const h = Math.max(22, Math.min(50, H * 0.17));
+  const tailY = y0 - H * 0.21; // rocket tail; the plume runs from here down to the limb
   const flicker = 1 + 0.2 * Math.sin(t * 9);
-  p.disc(cx, y0, Math.max(30, W * 0.05), [
-    [0, ORANGE_HOT, 0.5],
-    [0.25, ORANGE, 0.2],
+  p.disc(cx, y0, Math.max(34, W * 0.045), [
+    [0, ORANGE_HOT, 0.55],
+    [0.2, ORANGE, 0.22],
     [1, ORANGE, 0],
   ]);
-  const pw = 0.09 * h; // plume half-width at the tail; it tapers to a point on the limb
-  p.fill([cx - pw, tailY, cx + pw, tailY, cx + 0.6, y0, cx - 0.6, y0], ORANGE, 0.35 * flicker);
-  p.line([cx, tailY, cx, y0], ORANGE_HOT, 0.9, 1.2 * flicker);
+  const pw = 0.075 * h; // plume half-width at the tail; it tapers to a point on the limb
+  p.fill([cx - pw, tailY, cx + pw, tailY, cx + 0.5, y0, cx - 0.5, y0], ORANGE, 0.4 * flicker);
+  p.line([cx, tailY + 1, cx, y0], ORANGE_HOT, 0.95, 1.1 * flicker);
+  p.disc(cx, tailY + 1, h * 0.22, [
+    [0, ORANGE_HOT, 0.75],
+    [0.4, ORANGE, 0.25],
+    [1, ORANGE, 0],
+  ]);
+  // fins first, then the body over them
+  for (const side of [-1, 1]) {
+    p.fill(
+      [cx + side * 0.09 * h, tailY - 0.34 * h, cx + side * 0.24 * h, tailY - 0.06 * h, cx + side * 0.24 * h, tailY + 0.04 * h, cx + side * 0.09 * h, tailY - 0.06 * h],
+      [150, 170, 172],
+      0.95
+    );
+  }
   const body: [number, number][] = [
     [0, -1.05],
-    [0.1, -0.7],
-    [0.1, -0.2],
-    [0.2, 0],
-    [-0.2, 0],
-    [-0.1, -0.2],
-    [-0.1, -0.7],
+    [0.05, -0.95],
+    [0.1, -0.72],
+    [0.11, -0.3],
+    [0.09, 0],
+    [-0.09, 0],
+    [-0.11, -0.3],
+    [-0.1, -0.72],
+    [-0.05, -0.95],
   ];
   const poly: number[] = [];
   for (const [dx, dy] of body) poly.push(cx + dx * h, tailY + dy * h);
-  p.fill(poly, ROCKET, 0.8);
-  p.disc(cx, tailY - 0.7 * h, h * 0.06, [
-    [0, [9, 14, 18], 0.9],
+  p.fill(poly, ROCKET, 0.95);
+  // a sunlit edge on the right and a dark porthole
+  p.line([cx + 0.05 * h, tailY - 0.95 * h, cx + 0.1 * h, tailY - 0.72 * h, cx + 0.11 * h, tailY - 0.3 * h], ORANGE_HOT, 0.6, 0.8);
+  p.disc(cx, tailY - 0.62 * h, h * 0.045, [
+    [0, [9, 14, 18], 0.95],
+    [0.7, [9, 14, 18], 0.9],
     [1, [9, 14, 18], 0],
   ]);
 }

@@ -480,19 +480,20 @@ main:focus {
   font-size: 0.82rem;
 }
 
-/* the one "button": a bordered prompt line, no fill, no gloss.
+/* the one command line: unboxed, no fill, no gloss.
    command on the left, a quiet "read ↵" key hint on the right */
 .cmd-link {
   display: inline-flex;
   align-items: center;
   gap: 2.5ch;
   min-height: 44px;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--hairline-2);
-  border-radius: 3px;
+  padding: 0.6rem 0;
   color: var(--ink);
   text-decoration: none;
-  transition: border-color 0.18s ease;
+}
+
+.kicker-min {
+  text-transform: none;
 }
 
 .cta-cmd {
@@ -512,11 +513,7 @@ main:focus {
   transition: color 0.18s ease;
 }
 
-/* hover lights the border; keyboard focus keeps the global ring instead */
-.cmd-link:hover {
-  border-color: var(--lime);
-}
-
+/* hover lights the key hint; keyboard focus keeps the global ring instead */
 .cmd-link:hover .cta-hint,
 .cmd-link:focus-visible .cta-hint {
   color: var(--ink);
@@ -525,10 +522,6 @@ main:focus {
 .cmd-link:hover .cta-key,
 .cmd-link:focus-visible .cta-key {
   color: var(--lime);
-}
-
-.hero-meta {
-  color: var(--muted);
 }
 
 /* narrow screens: the prompt spans the column so the hint sits flush right */
@@ -1628,16 +1621,20 @@ code[data-theme] span {
   height: clamp(150px, 21vw, 300px);
 }
 
-/* phones: tighter spacing keeps the wordmark and all five links on one line */
+/* phones: the wordmark above one quiet row of links, flush with the column, 44px targets */
 @media (max-width: 34rem) {
   .foot-inner {
-    gap: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.25rem;
   }
   .foot-links {
-    gap: 0.1rem;
+    flex-wrap: nowrap;
+    gap: 0 1.1rem;
   }
   .foot-links a {
-    font-size: 0.75rem;
+    justify-content: flex-start;
     padding: 0;
   }
 }

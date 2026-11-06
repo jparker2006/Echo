@@ -22,11 +22,11 @@ export default function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="kicker" data-reveal>
-              latest
-              <span className="kicker-sep" aria-hidden="true">
-                /
-              </span>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+              <span className="kicker-sep" aria-hidden="true">
+                |
+              </span>
+              {latest.minutes} min
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
@@ -46,7 +46,6 @@ export default function Home() {
                   read <span className="cta-key" aria-hidden="true">↵</span>
                 </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>

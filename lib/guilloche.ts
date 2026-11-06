@@ -103,7 +103,7 @@ function strokeRun(
       const bi = key >> 1;
       const b = (bi + 0.5) / B;
       if (key & 1) p.line(cur, mix(ORANGE, ORANGE_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
-      else p.line(cur, tealFor(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
+      else p.line(cur, tealFor(b), Math.min(1, (0.2 + 0.75 * b) * gain), 0.4 + 0.9 * b);
     }
     cur = [];
   };
@@ -193,20 +193,13 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const L: [number, number, number] = [0.55 / lm, 0.5 / lm, 0.42 / lm]; // light: right, up, toward viewer
   const spin = t * 0.05;
   const B = q >= 1 ? 8 : 3;
-  const NL = Math.round(96 * q);
-  const NS = Math.round(220 * q);
+  const NL = Math.round(150 * q);
+  const NS = Math.round(300 * q);
   const NU = Math.round(160 * q);
   const NR = Math.round(22 * q);
   const psi = -0.32;
 
   starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
-
-  // warm halo in the sky
-  p.disc(cx, cy, R * 1.28, [
-    [0.78, ORANGE, 0],
-    [0.86, ORANGE, 0.11],
-    [1, ORANGE, 0],
-  ]);
 
   // rings, back half (drawn under the body)
   const ringPass = (front: boolean) => {
@@ -222,10 +215,11 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
         xy.push(cx + sx, cy - sy);
         const lit = (sx * L[0] + sy * L[1]) / a;
         ok.push(z > 0 === front);
-        warm.push(front && lit > 0.45);
-        bright.push(front ? 0.3 + 0.55 * Math.max(0, lit) : 0.14);
+        // orange only where the ring catches the sun; the rest stays teal
+        warm.push(lit > 0.5);
+        bright.push(front ? 0.4 + 0.5 * Math.max(0, lit) : 0.26);
       }
-      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5);
+      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.8 : 0.9);
     }
   };
   // one dotted outer orbit
@@ -272,12 +266,12 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
       xy.push(cx + r * X, cy - r * y2);
       ok.push(z2 > 0);
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
-      bright.push(clamp01(0.06 + 0.78 * Math.max(0, d) ** 1.3 + 0.1 * w + 0.2 * (1 - z2) ** 4));
+      bright.push(clamp01(0.24 + 0.85 * Math.max(0, d) ** 1.0 + 0.12 * w + 0.25 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B);
+    strokeSeries(p, xy, bright, ok, null, B, 1.3);
   }
 
-  // crisp limb, and a burnt-orange rim on the lit side
+  // crisp limb, and a thin burnt-orange glow on the lit side
   const limb: number[] = [];
   for (let j = 0; j <= 120; j++) {
     const a = (TAU * j) / 120;
@@ -286,9 +280,8 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   p.line(limb, TEAL, 0.6, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
-    [1.1, 0.8, 7, 0.07],
-    [1.0, 0.8, 3, 0.2],
-    [0.9, 0.8, 1.1, 0.95],
+    [1.0, 1.6, 1.4, 0.32],
+    [0.9, 0.9, 0.9, 0.95],
   ] as const) {
     const arc: number[] = [];
     for (let j = 0; j <= 40; j++) {

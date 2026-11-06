@@ -487,12 +487,10 @@ main:focus {
   align-items: center;
   gap: 2.5ch;
   min-height: 44px;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--hairline-2);
-  border-radius: 3px;
+  padding: 0.6rem 0;
   color: var(--ink);
   text-decoration: none;
-  transition: border-color 0.18s ease;
+  transition: color 0.18s ease;
 }
 
 .cta-cmd {
@@ -514,7 +512,9 @@ main:focus {
 
 /* hover lights the border; keyboard focus keeps the global ring instead */
 .cmd-link:hover {
-  border-color: var(--lime);
+  text-decoration: underline;
+  text-decoration-color: var(--lime);
+  text-underline-offset: 0.3em;
 }
 
 .cmd-link:hover .cta-hint,
@@ -525,10 +525,6 @@ main:focus {
 .cmd-link:hover .cta-key,
 .cmd-link:focus-visible .cta-key {
   color: var(--lime);
-}
-
-.hero-meta {
-  color: var(--muted);
 }
 
 /* narrow screens: the prompt spans the column so the hint sits flush right */

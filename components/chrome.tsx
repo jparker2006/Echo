@@ -73,6 +73,12 @@ export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <p className="foot-brand">
+          <span className="brand-word">echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </p>
         <nav className="foot-links" aria-label="Elsewhere">
           <Link href="/">posts</Link>
           <Link href="/projects">projects</Link>

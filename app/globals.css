@@ -1557,7 +1557,7 @@ code[data-theme] span {
   font-size: 0.74rem;
 }
 
-/* two quiet links in the sky, aligned to the page's right edge */
+/* the wordmark on the left, one row of links on the right, all on one line */
 .foot-inner {
   position: relative;
   z-index: 1;
@@ -1565,18 +1565,46 @@ code[data-theme] span {
   margin: 0 auto;
   padding: 0 var(--gutter);
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.foot-brand {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+.foot-brand .brand-word {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.foot-brand .brand-cursor {
+  font-size: 1.2rem;
+  margin-left: 0.08em;
 }
 
 .foot-links {
   display: flex;
+  flex-wrap: nowrap;
   gap: 1.75rem;
 }
 
 .foot-links a {
-  display: inline-block;
-  padding: 0.75rem 0;
-  color: var(--dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.25rem;
+  color: var(--ink-2);
+  font-size: 0.8rem;
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -1598,6 +1626,20 @@ code[data-theme] span {
 .foot-horizon .guil--footer,
 .guil--footer {
   height: clamp(150px, 21vw, 300px);
+}
+
+/* phones: tighter spacing keeps the wordmark and all five links on one line */
+@media (max-width: 34rem) {
+  .foot-inner {
+    gap: 0.5rem;
+  }
+  .foot-links {
+    gap: 0.1rem;
+  }
+  .foot-links a {
+    font-size: 0.75rem;
+    padding: 0;
+  }
 }
 
 /* ============================================================

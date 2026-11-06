@@ -392,20 +392,18 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
     }
   }
 
-  // the rocket on its exhaust, lifting straight off the limb
-  const h = Math.max(16, Math.min(40, H * 0.15));
-  p.disc(cx, y0, Math.max(40, W * 0.07), [
+  // the rocket: a slim body lifting off the limb, its thin plume trailing down to the limb
+  const h = Math.max(16, Math.min(34, H * 0.11));
+  const tailY = y0 - H * 0.2; // rocket tail; the plume runs from here down to the limb
+  const flicker = 1 + 0.2 * Math.sin(t * 9);
+  p.disc(cx, y0, Math.max(30, W * 0.05), [
     [0, ORANGE_HOT, 0.5],
     [0.25, ORANGE, 0.2],
     [1, ORANGE, 0],
   ]);
-  const flicker = 1 + 0.2 * Math.sin(t * 9);
-  for (let f = 0; f <= 6; f++) {
-    const ang = -0.22 + (0.44 * f) / 6;
-    p.line([cx, y0, cx + Math.sin(ang) * h * 0.55, y0 - Math.cos(ang) * h * 0.55], ORANGE, 0.22, 0.8);
-  }
-  p.line([cx, y0 - 1, cx, y0 - h * 0.95], ORANGE, 0.2, 5);
-  p.line([cx, y0 - 1, cx, y0 - h * 0.95], ORANGE_HOT, 0.9, 1.3 * flicker);
+  const pw = 0.09 * h; // plume half-width at the tail; it tapers to a point on the limb
+  p.fill([cx - pw, tailY, cx + pw, tailY, cx + 0.6, y0, cx - 0.6, y0], ORANGE, 0.35 * flicker);
+  p.line([cx, tailY, cx, y0], ORANGE_HOT, 0.9, 1.2 * flicker);
   const body: [number, number][] = [
     [0, -1.05],
     [0.1, -0.7],
@@ -416,9 +414,9 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
     [-0.1, -0.7],
   ];
   const poly: number[] = [];
-  for (const [dx, dy] of body) poly.push(cx + dx * h, y0 + dy * h);
+  for (const [dx, dy] of body) poly.push(cx + dx * h, tailY + dy * h);
   p.fill(poly, ROCKET, 0.8);
-  p.disc(cx, y0 - 0.7 * h, h * 0.06, [
+  p.disc(cx, tailY - 0.7 * h, h * 0.06, [
     [0, [9, 14, 18], 0.9],
     [1, [9, 14, 18], 0],
   ]);

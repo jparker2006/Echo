@@ -14,26 +14,22 @@ export const GLYPH_W = 0.6; // JetBrains Mono advance width, in em
     the ring a greyer lavender, so the ring still reads where it crosses the disc. */
 export const PALETTE = [
   "transparent",
-  "#46425a", // 1 star, dim
-  "#c4c0d4", // 2 star, bright
-  "#3a2675", // 3 planet, night side
-  "#5c37c4", // 4 planet, dusk
-  "#844ff0", // 5 planet, day
-  "#cba8ff", // 6 planet, highlight
-  "#4f4870", // 7 ring, shadowed / far
-  "#ddd6f0", // 8 ring, lit
-  "#eceaf2", // 9 rocket, lit
-  "#8d88a0", // 10 rocket, shade
+  "#3b2f63", // 1 star, dim
+  "#e4d8ff", // 2 star, bright
+  "#3a2676", // 3 planet, night side: deep violet
+  "#6236c4", // 4 planet, dusk
+  "#8650e6", // 5 planet, day
+  "#e2d0ff", // 6 planet, pale lilac highlight
+  "#5a44a6", // 7 ring, shadowed / far
+  "#c2a8ff", // 8 ring, lit
+  "#efe6ff", // 9 rocket, lit
+  "#8a78c0", // 10 rocket, shade
   "#c6f35a", // 11 flame (the only lime)
-  "#a675ff", // 12 planet, bright
-  "#8f86b2", // 13 ring, mid
-  "#77728c", // 14 star, mid
+  "#ad80ff", // 12 planet, bright
+  "#8566cc", // 13 ring, mid
+  "#5b4a94", // 14 star, mid
 ];
 
-// planet and ring use different glyphs, so the ring stays a ring where it crosses the disc
-const PLANET_RAMP = " .:;+*#%@";
-const RING_RAMP = " .-=";
-const BODY_RAMP = ".:-=+#%@";
 
 type V3 = [number, number, number];
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -224,10 +220,11 @@ export type Scene = {
   zb: Float32Array;
 };
 
-export const GLYPHS = Array.from(new Set((" " + PLANET_RAMP + RING_RAMP + BODY_RAMP + "o^*'+.").split(""))).join("");
-const G = (ch: string) => GLYPHS.indexOf(ch);
-const PLANET_G = PLANET_RAMP.split("").map(G);
-const RING_G = RING_RAMP.split("").map(G);
+// The whole field is binary: every lit cell is a "0" or a "1", picked per cell
+// (so the digits hold still while the planet turns). Brightness lives in the
+// colour, not the glyph. Index 0 is "empty".
+export const GLYPHS = " 01";
+const digitAt = (k: number) => (hash3(k, 3, 11) < 0.5 ? 1 : 2);
 
 const TAU = Math.PI * 2;
 
@@ -314,14 +311,15 @@ export function createScene(W: number, H: number): Scene {
   // sparse stars, kept off the planet's edge and out of the ring's ellipse so
   // the silhouette stays clean
   const rand = mulberry32(2006 + W);
+  const starP = 0.034 * (80 / W) ** 2; // per-cell odds, scaled so the sky density holds on any grid
   for (let k = 0; k < n; k++) {
     const r = rand();
-    if (s.kind[k] !== 0 || r >= 0.034) continue;
+    if (s.kind[k] !== 0 || r >= starP) continue;
     const x = (k % W) + 0.5 - cx;
     const y = (cy - (((k / W) | 0) + 0.5)) * ASPECT;
     const rz = -(RING_N[0] * x + RING_N[1] * y) / RING_N[2];
     if (Math.hypot(x, y, rz) < ROUT + 1.5 || Math.hypot(x, y) < R + 2) continue;
-    s.stars.push({ k, phase: rand() * TAU, speed: 0.4 + rand() * 1.2, level: r < 0.004 ? 2 : r < 0.012 ? 1 : 0 });
+    s.stars.push({ k, phase: rand() * TAU, speed: 0.4 + rand() * 1.2, level: r < starP * 0.12 ? 2 : r < starP * 0.35 ? 1 : 0 });
   }
   return s;
 }
@@ -341,16 +339,17 @@ export function renderFrame(s: Scene, t: number) {
       const v = s.lat[k] / Math.PI + 0.5;
       const tex = PLANET_TEX[Math.min(TH - 1, (v * (TH - 1)) | 0) * TW + ((u * TW) | 0)];
       // the belts modulate the light; a little ambient keeps the night side a disc
-      const b = Math.min(1, s.diff[k] * (0.2 + 0.85 * tex) + 0.07 + 0.1 * tex + s.rim[k]);
-      chars[k] = PLANET_G[Math.max(1, Math.round(b * (PLANET_G.length - 1)))];
+      const b = Math.min(1, s.diff[k] * (0.25 + 0.85 * tex) + 0.14 + 0.1 * tex + s.rim[k]);
+      chars[k] = digitAt(k);
       tones[k] = b > 0.8 ? 6 : b > 0.6 ? 12 : b > 0.38 ? 5 : b > 0.15 ? 4 : 3;
-    } else if (kd === 2 && s.diff[k] > 0) {
+    } else if (kd === 2) {
       let u = (s.ringA[k] + ringSpin) / TAU;
       u -= Math.floor(u);
       const tex = RING_TEX[s.ringR[k] * RTW + ((u * RTW) | 0)];
-      const b = Math.min(1, tex * s.diff[k] * 1.15);
-      chars[k] = RING_G[Math.max(1, Math.round(b * (RING_G.length - 1)))];
-      tones[k] = b > 0.56 ? 8 : b > 0.28 ? 13 : 7;
+      // the ring keeps a floor of light even in its own shadow, so the band always reads
+      const b = Math.min(1, tex * (0.5 + 0.9 * s.diff[k]) + 0.12);
+      chars[k] = digitAt(k);
+      tones[k] = b > 0.6 ? 8 : b > 0.36 ? 13 : 7;
     } else {
       chars[k] = 0;
       tones[k] = 0;
@@ -360,7 +359,7 @@ export function renderFrame(s: Scene, t: number) {
   for (const st of s.stars) {
     const tw = Math.sin(t * st.speed + st.phase) + st.level * 0.5;
     if (tw < -0.7) continue;
-    chars[st.k] = G(tw > 1.5 ? "+" : tw > 1.1 ? "*" : ".");
+    chars[st.k] = digitAt(st.k);
     tones[st.k] = tw > 1 ? 2 : tw > 0.4 ? 14 : 1;
   }
 
@@ -388,9 +387,9 @@ export function renderFrame(s: Scene, t: number) {
   const cr = Math.cos(roll), sr = Math.sin(roll);
   const up: V3 = [n0[0] * cr + s0[0] * sr, n0[1] * cr + s0[1] * sr, n0[2] * cr + s0[2] * sr];
   const side = cross(fwd, up);
-  const scale = R * 0.145;
+  const scale = R * 0.2; // a readable rocket, not a speck
 
-  const plot = (lx: number, lf: number, lu: number, glyph: number, tone: number) => {
+  const plot = (lx: number, lf: number, lu: number, tone: number) => {
     const wx = pos[0] + (side[0] * lx + fwd[0] * lf + up[0] * lu) * scale;
     const wy = pos[1] + (side[1] * lx + fwd[1] * lf + up[1] * lu) * scale;
     const wz = pos[2] + (side[2] * lx + fwd[2] * lf + up[2] * lu) * scale;
@@ -400,7 +399,7 @@ export function renderFrame(s: Scene, t: number) {
     const k = row * W + col;
     if (wz <= zb[k]) return; // hidden behind the planet, the ring, or nearer rocket points
     zb[k] = wz;
-    chars[k] = glyph;
+    chars[k] = digitAt(k);
     tones[k] = tone;
   };
 
@@ -413,21 +412,20 @@ export function renderFrame(s: Scene, t: number) {
       side[2] * pt.n[0] + fwd[2] * pt.n[1] + up[2] * pt.n[2],
     ], LIGHT);
     const [x, f, u] = pt.p;
-    if (pt.kind === 2) plot(x, f, u, G("o"), 6);
-    else if (pt.kind === 1) plot(x, f, u, G(Math.abs(nl) > 0.35 ? "#" : "+"), 10);
-    else if (pt.kind === 3) plot(x, f, u, G(nl > 0 ? "%" : "#"), 10);
-    else plot(x, f, u, G(nl > 0.6 ? "@" : nl > 0.3 ? "%" : nl > 0.05 ? "#" : "*"), nl > 0.05 ? 9 : 10);
+    if (pt.kind === 2) plot(x, f, u, 6);
+    else if (pt.kind === 1) plot(x, f, u, 10);
+    else if (pt.kind === 3) plot(x, f, u, 10);
+    else plot(x, f, u, nl > 0.05 ? 9 : 10);
   }
 
   // exhaust: a lime plume that tapers from a dense core and flickers in length
   const flick = mulberry32(Math.floor(t * 20) + 1);
   const len = 2.2 + flick() * 2;
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 150; i++) {
     const d = Math.pow(flick(), 1.4); // 0 at the nozzle, 1 at the tip
     const r = 0.75 * Math.pow(1 - d, 0.9) * flick();
     const ang = flick() * TAU;
-    const glyph = d < 0.18 ? "@" : d < 0.4 ? "*" : d < 0.7 ? "+" : "'";
-    plot(Math.cos(ang) * r, -2.9 - d * len, Math.sin(ang) * r, G(glyph), 11);
+    plot(Math.cos(ang) * r, -2.9 - d * len, Math.sin(ang) * r, 11);
   }
 }
 
@@ -462,15 +460,13 @@ export function frameText(W: number, H: number, t: number) {
 
 /** The two grid sizes: a wide one for desktop and a coarser one for phones.
     Both share the same aspect ratio so swapping them never shifts layout. */
-export const GRID_WIDE = { W: 80, H: 36 } as const;
-export const GRID_NARROW = { W: 60, H: 27 } as const;
+export const GRID_WIDE = { W: 200, H: 90 } as const; // 2.5× the old 80-column grid
+export const GRID_NARROW = { W: 120, H: 54 } as const; // 2× the old 60-column grid
 export const STATIC_T = 3.4;
 
 // ---- footer horizon: the limb of a huge planet rising at the page's end ----
 
-const HORIZON_RAMP = " .-~=+*#%@";
-
-type Cell = { ch: string; tone: number };
+type Cell = { ch: string; tone: number }; // ch is "" for empty; lit cells print their digit
 
 /** Everything about the horizon that doesn't depend on where the light is. */
 export type Horizon = {
@@ -537,32 +533,31 @@ export function createHorizon(W: number, H: number): Horizon {
         // fewer stars close to the planet, as if washed out by the glow
         const r = rand();
         const near = Math.min(1, (d - atmo) / (R * 0.06));
-        const underLinks = col > W * 0.8 && row < 3; // keep the sky clear behind the footer links
-        if (underLinks) continue;
-        if (r < 0.006 * near) h.fixed[k] = { ch: "*", tone: 2 };
-        else if (r < 0.03 * near) h.fixed[k] = { ch: ".", tone: r < 0.015 ? 14 : 1 };
-        else if (r < 0.033 * near) h.fixed[k] = { ch: "+", tone: 14 };
+        // odds per cell, thinned on finer grids so the sky reads the same at any size
+        const starK = (140 / W) ** 2;
+        if (r < 0.006 * near * starK) h.fixed[k] = { ch: "*", tone: 2 };
+        else if (r < 0.03 * near * starK) h.fixed[k] = { ch: ".", tone: r < 0.015 * starK ? 14 : 1 };
       }
     }
   }
 
-  // a small rocket leaving orbit up and to the right, trailing lime exhaust
-  const rc = Math.round(W * (W < 100 ? 0.16 : 0.7)); // narrow grid: out on the left, clear of the links
-  const rr = 1;
-  for (let r = 0; r < 5; r++) for (let c = rc - 3; c <= rc + 3; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
-  const put = (r: number, c: number, ch: string, tone: number) => {
-    if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = { ch, tone };
+  // a small rocket lifting straight off the limb's apex: nose up in the sky,
+  // lit exhaust trailing down to the glow
+  const rc = Math.round(W * 0.5);
+  const rr = Math.max(0, Math.floor(top) - 14);
+  for (let r = rr; r < Math.min(H, rr + 16); r++) for (let c = rc - 4; c <= rc + 4; c++) if (c >= 0 && c < W) h.fixed[r * W + c] = null;
+  const put = (r: number, c: number, tone: number) => {
+    if (r >= 0 && r < H && c >= 0 && c < W) h.fixed[r * W + c] = { ch: "#", tone };
   };
-  put(rr, rc, "^", 9);
-  put(rr + 1, rc, "#", 9);
-  put(rr + 2, rc, "#", 10);
-  put(rr + 2, rc - 1, "/", 10);
-  put(rr + 2, rc + 1, "\\", 10);
-  for (let i = 0; i < 9; i++) {
-    const r = rr + 3 + i;
-    const c = rc - Math.round(i * i * 0.28);
-    if (r >= H || c < 0 || h.kind[r * W + c] !== 0) break; // stop at the atmosphere
-    put(r, c, i < 2 ? "*" : i < 5 ? "'" : ".", i < 5 ? 11 : 14);
+  // a fuller body so the rocket reads at a glance on the 280-column grid
+  for (let r = rr; r < rr + 3; r++) for (let c = rc - 2; c <= rc + 2; c++) put(r, c, r === rr ? 9 : 10);
+  put(rr - 1 < 0 ? rr : rr - 1, rc, 9);
+  put(rr + 3, rc - 3, 10);
+  put(rr + 3, rc + 3, 10);
+  for (let i = 0; i < 12; i++) {
+    const r = rr + 4 + i;
+    if (r >= H || h.kind[r * W + rc] !== 0) break; // stop at the atmosphere
+    put(r, rc, i < 4 ? 11 : 14);
   }
   return h;
 }
@@ -584,26 +579,25 @@ export function shadeHorizon(h: Horizon, light: HorizonLight): Run[][] {
         const f = Math.max(0, 1 - (dc * dc + dr * dr) / spotR2);
         boost = light.spot * f * f;
       }
-      let cell: Cell = { ch: " ", tone: 0 };
+      let cell: Cell = { ch: "", tone: 0 };
       const fixed = h.fixed[k];
       if (fixed) {
         // stars near the pointer flare up; the rocket and its trail stay as they are
-        cell = boost > 0.12 && (fixed.tone === 1 || fixed.tone === 14) ? { ch: fixed.ch === "." ? "*" : "+", tone: 2 } : fixed;
+        cell = boost > 0.12 && (fixed.tone === 1 || fixed.tone === 14) ? { ch: "*", tone: 2 } : fixed;
       } else if (h.kind[k] === 1) {
         const lit = Math.max(0, h.nx[k] * sun[0] + h.ny[k] * sun[1] + h.nz[k] * sun[2]);
         const b = Math.min(1, lit * (0.15 + 1.05 * h.tex[k]) + 0.55 * h.rim[k] + 0.03 + 0.5 * boost);
-        cell = {
-          ch: HORIZON_RAMP[Math.max(1, Math.round(b * (HORIZON_RAMP.length - 1)))],
-          tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3,
-        };
+        cell = { ch: "#", tone: b > 0.8 ? 6 : b > 0.55 ? 12 : b > 0.32 ? 5 : b > 0.14 ? 4 : 3 };
       } else if (h.kind[k] === 2) {
         const glow = Math.min(1, h.tex[k] + boost * 0.8);
-        cell = { ch: glow > 0.55 ? ":" : ".", tone: glow > 0.55 ? 6 : 13 };
+        cell = { ch: "#", tone: glow > 0.55 ? 6 : 13 };
       }
-      const t = cell.ch === " " ? (runs.at(-1)?.tone ?? 0) : cell.tone;
+      // every lit cell prints as a binary digit; the colour carries the tone
+      const ch = cell.ch ? GLYPHS[digitAt(k)] : " ";
+      const t = ch === " " ? (runs.at(-1)?.tone ?? 0) : cell.tone;
       const last = runs.at(-1);
-      if (last && last.tone === t) last.text += cell.ch;
-      else runs.push({ tone: t, text: cell.ch });
+      if (last && last.tone === t) last.text += ch;
+      else runs.push({ tone: t, text: ch });
     }
     rows.push(runs);
   }
@@ -615,5 +609,5 @@ export function horizonRuns(W: number, H: number): Run[][] {
   return shadeHorizon(createHorizon(W, H), HORIZON_REST);
 }
 
-export const HORIZON_WIDE = { W: 140, H: 20 } as const;
-export const HORIZON_NARROW = { W: 60, H: 13 } as const;
+export const HORIZON_WIDE = { W: 280, H: 40 } as const; // 2× the old 140-column limb
+export const HORIZON_NARROW = { W: 120, H: 26 } as const;

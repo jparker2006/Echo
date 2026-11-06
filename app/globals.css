@@ -376,6 +376,7 @@ main:focus {
   min-height: clamp(34rem, min(100svh - 10rem, 66vw), 50rem);
   padding: clamp(1rem, 3vh, 2.5rem) 0 clamp(2.5rem, 7vh, 5rem);
   isolation: isolate;
+  border-bottom: 1px solid var(--hairline);
 }
 
 /* a faint starfield behind the whole hero: three layers on co-prime tiles
@@ -436,12 +437,12 @@ main:focus {
 }
 
 .hero-title {
-  margin: 1.25rem 0 0;
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: clamp(2.6rem, 5.4vw, 4.75rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  margin: 1rem 0 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.9rem, 5.8vw, 5.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
@@ -480,55 +481,40 @@ main:focus {
   font-size: 0.82rem;
 }
 
-/* the one "button": a bordered prompt line, no fill, no gloss.
-   command on the left, a quiet "read ↵" key hint on the right */
+/* the one call to action: a plain lime prompt line, no box, no fill.
+   The whole line is the link; hover and focus underline it. */
 .cmd-link {
   display: inline-flex;
   align-items: center;
   gap: 2.5ch;
   min-height: 44px;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--hairline-2);
-  border-radius: 3px;
-  color: var(--ink);
+  padding: 0.6rem 0;
+  color: var(--lime);
   text-decoration: none;
-  transition: border-color 0.18s ease;
 }
 
 .cta-cmd {
   min-width: 0;
 }
 
-.cta-hint {
+.cta-hint,
+.cta-key {
   flex-shrink: 0;
-  color: var(--muted);
-  transition: color 0.18s ease;
+  color: var(--lime);
 }
 
 .cta-key {
   display: inline-block;
   margin-left: 0.5ch;
-  color: var(--dim);
-  transition: color 0.18s ease;
 }
 
-/* hover lights the border; keyboard focus keeps the global ring instead */
-.cmd-link:hover {
-  border-color: var(--lime);
-}
-
+.cmd-link:hover .cta-cmd,
 .cmd-link:hover .cta-hint,
+.cmd-link:focus-visible .cta-cmd,
 .cmd-link:focus-visible .cta-hint {
-  color: var(--ink);
-}
-
-.cmd-link:hover .cta-key,
-.cmd-link:focus-visible .cta-key {
-  color: var(--lime);
-}
-
-.hero-meta {
-  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
 }
 
 /* narrow screens: the prompt spans the column so the hint sits flush right */
@@ -559,7 +545,7 @@ main:focus {
 
 .ascii-scene {
   position: relative;
-  /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
+  /* 200 × 90 cells at 0.6em × 1.05em → keep the box at that ratio */
   aspect-ratio: 48 / 37.8;
   transform-style: preserve-3d;
 }
@@ -575,17 +561,17 @@ main:focus {
   margin: 0;
   font-family: var(--mono);
   font-variant-ligatures: none; /* keep "==" and "--" as separate cells */
-  font-size: calc(100cqi / 48);
+  font-size: calc(100cqi / 120); /* 200 cols × 0.6em */
   line-height: 1.05;
   white-space: pre;
   overflow: hidden;
   user-select: none;
 }
 
-/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
+/* 120 × 54 cells → 72em wide; same box ratio as the wide grid */
 .ascii-static--narrow {
   display: none;
-  font-size: calc(100cqi / 36);
+  font-size: calc(100cqi / 72);
 }
 
 /* phones get the coarser grid, matching what the canvas switches to */
@@ -645,13 +631,11 @@ main:focus {
 .post-list {
   list-style: none;
   padding: 0;
+  border-top: 1px solid var(--hairline);
 }
 
 .post-item {
-  background-image: var(--dots);
-  background-size: 100% 1px;
-  background-position: bottom;
-  background-repeat: no-repeat;
+  border-bottom: 1px solid var(--hairline);
 }
 
 /* one line per post: date rail, title, read time flush right.
@@ -684,11 +668,11 @@ main:focus {
 }
 
 .post-title {
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
@@ -724,31 +708,64 @@ main:focus {
   outline: 2px solid var(--lime);
 }
 
+/* home section heads: big serif "posts" / "projects", with an optional link */
+.home-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.home-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(3rem, 7vw, 5.2rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.home-head-aside {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.home-head-aside a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.home-head-aside a:hover {
+  color: var(--lime);
+}
+
+/* one row per project: name and year/link on the left, description on the right.
+   The name link stretches over the row; the links row sits above that layer. */
 .project-grid {
   list-style: none;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
+  margin: 0;
   border-top: 1px solid var(--hairline);
 }
 
-/* the whole cell is the hit area (the name link stretches over it); the
-   links row sits above that layer and is pinned to the bottom so rows align */
 .project-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.5rem 1.5rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  gap: 0.6rem 2.5rem;
+  align-items: start;
+  padding: 1.6rem 0;
   border-bottom: 1px solid var(--hairline);
 }
 
-.project-card + .project-card {
-  padding-left: 1.5rem;
-  border-left: 1px solid var(--hairline);
-}
-
-/* a short lime tick on the top rule marks the hovered / focused card */
+/* a short lime tick on the top rule marks the hovered / focused row */
 .project-card::before {
   content: "";
   position: absolute;
@@ -762,21 +779,27 @@ main:focus {
   transition: transform 0.2s ease;
 }
 
-.project-card + .project-card::before {
-  left: 1.5rem;
-}
-
 .project-card:hover::before,
 .project-card:focus-within::before {
   transform: scaleX(1);
 }
 
+.project-card-head,
+.project-card-body {
+  min-width: 0;
+}
+
+.project-card-meta {
+  margin: 0;
+}
+
 .project-card-name {
-  margin: 0.5rem 0 0.4rem;
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 2.8vw, 2.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
 .project-card-name a {
@@ -802,7 +825,7 @@ main:focus {
 .project-card-ext {
   margin-left: 0.3em;
   font-family: var(--mono);
-  font-size: 0.75em;
+  font-size: 0.5em;
   color: var(--dim);
   transition: color 0.18s ease;
 }
@@ -812,16 +835,13 @@ main:focus {
   color: var(--lime);
 }
 
-/* less text: clamped on the home page; the full line is on /projects */
 .project-card-desc {
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
+  margin: 0.25rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 1.35vw, 1.22rem);
+  line-height: 1.45;
+  color: var(--ink-2);
+  text-wrap: pretty;
 }
 
 /* paper · demo · blog post, mono and quiet; each link is a 44px-tall target */
@@ -831,17 +851,16 @@ main:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 0 1.25rem;
-  margin-top: auto;
-  padding-top: 0.5rem;
+  margin: 0.25rem 0 0;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
 }
 
 .project-card-links a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--muted);
+  color: var(--ink-2);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
@@ -853,6 +872,13 @@ main:focus {
 .project-card-links a:focus-visible {
   color: var(--ink);
   text-decoration-color: var(--lime);
+}
+
+@media (max-width: 40rem) {
+  .project-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
 }
 
 /* ============================================================
@@ -1536,29 +1562,36 @@ code[data-theme] span {
   margin-inline: calc(50% - 50vw);
   container-type: inline-size;
   font-family: var(--mono);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
 }
 
-/* two quiet links in the sky, aligned to the page's right edge */
+/* wordmark on the left, one row of links on the right, hairline above */
 .foot-inner {
   position: relative;
   z-index: 1;
   max-width: var(--page);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 1.5rem var(--gutter) 0;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  border-top: 1px solid var(--hairline);
 }
 
 .foot-links {
   display: flex;
-  gap: 1.75rem;
+  flex-wrap: wrap;
+  gap: 0 clamp(1rem, 2.5vw, 1.75rem);
 }
 
 .foot-links a {
-  display: inline-block;
-  padding: 0.75rem 0;
-  color: var(--dim);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -1566,33 +1599,36 @@ code[data-theme] span {
   transition: color 0.18s ease, text-decoration-color 0.18s ease;
 }
 
-.foot-links a:hover {
+.foot-links a:hover,
+.foot-links a:focus-visible {
   color: var(--ink);
   text-decoration-color: var(--lime);
 }
 
-/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
+/* the horizon art: 280 columns (120 on narrow screens) scaled to the full width,
+   and never taller than 300px, so the rocket and the limb stay in view */
 .foot-horizon {
-  margin-top: -1.5rem;
+  margin-top: 0.5rem;
   user-select: none;
 }
 
 .foot-art {
   margin: 0;
+  max-height: 300px;
+  overflow: hidden;
   font-family: var(--mono);
   font-variant-ligatures: none;
   line-height: 1.05;
   white-space: pre;
-  overflow: hidden;
 }
 
 .foot-art--wide {
-  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
+  font-size: calc(100cqi / 168); /* 280 cols × 0.6em */
 }
 
 .foot-art--narrow {
   display: none;
-  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
+  font-size: calc(100cqi / 72); /* 120 cols × 0.6em */
 }
 
 @container (max-width: 639.98px) {
@@ -1609,24 +1645,6 @@ code[data-theme] span {
    ============================================================ */
 
 @media (max-width: 60rem) {
-  .project-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .project-card:nth-child(odd) {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .project-card:nth-child(even) {
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--hairline);
-  }
-  .project-card:nth-child(odd)::before {
-    left: 0;
-  }
-  .project-card-desc {
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
   .post-main {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 1.4rem 0;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
-import { Shell, SectionHead } from "@/components/chrome";
+import { Shell } from "@/components/chrome";
 import { AsciiScene } from "@/components/ascii-art";
 
 // the four projects that lead the home page, in this order
@@ -21,12 +21,12 @@ export default function Home() {
       {latest ? (
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="kicker" data-reveal>
-              latest
-              <span className="kicker-sep" aria-hidden="true">
-                /
-              </span>
+            <p className="kicker hero-kicker" data-reveal>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+              <span className="kicker-sep" aria-hidden="true">
+                |
+              </span>
+              {latest.minutes} min
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
@@ -46,7 +46,6 @@ export default function Home() {
                   read <span className="cta-key" aria-hidden="true">↵</span>
                 </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>
@@ -56,11 +55,7 @@ export default function Home() {
       ) : null}
 
       <section className="home-section" aria-labelledby="posts-head">
-        <SectionHead
-          id="posts-head"
-          command="ls /posts"
-          aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
-        />
+        <HomeHead id="posts-head" title="posts" />
         <ol className="post-list">
           {posts.map((post) => (
             <li key={post.slug} className="post-item" data-reveal-row>
@@ -79,11 +74,7 @@ export default function Home() {
       </section>
 
       <section className="home-section" aria-labelledby="projects-head">
-        <SectionHead
-          id="projects-head"
-          command="ls /projects"
-          aside={<Link href="/projects">all {projects.length} →</Link>}
-        />
+        <HomeHead id="projects-head" title="projects" aside={<Link href="/projects">all {projects.length} →</Link>} />
         <ul className="project-grid">
           {picks.map((project) => {
             // external URLs and static files open in a new tab; app routes stay in-tab
@@ -107,12 +98,13 @@ export default function Home() {
               : null;
             return (
               <li key={project.name} className="project-card" data-reveal-row>
+                <div className="project-card-head">
                 <p className="post-date project-card-meta">
                   {project.year}
                   {where ? (
                     <>
                       <span className="kicker-sep" aria-hidden="true">
-                        /
+                        |
                       </span>
                       {where}
                     </>
@@ -135,6 +127,8 @@ export default function Home() {
                     project.name
                   )}
                 </h3>
+                </div>
+                <div className="project-card-body">
                 <p className="project-card-desc">{project.description}</p>
                 {links.length ? (
                   <p className="project-card-links">
@@ -151,11 +145,22 @@ export default function Home() {
                     )}
                   </p>
                 ) : null}
+                </div>
               </li>
             );
           })}
         </ul>
       </section>
     </Shell>
+  );
+}
+
+/** A display heading for a home section: big serif title, optional right-hand link. */
+function HomeHead({ id, title, aside }: { id: string; title: string; aside?: React.ReactNode }) {
+  return (
+    <div className="home-head" data-reveal>
+      <h2 id={id}>{title}</h2>
+      {aside ? <p className="home-head-aside">{aside}</p> : null}
+    </div>
   );
 }

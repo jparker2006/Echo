@@ -731,31 +731,45 @@ main:focus {
   outline: 2px solid var(--lime);
 }
 
+/* one full-width hairline row per project: name + "year | link" on the left,
+   a vertical hairline, then the description and related links on the right */
 .project-grid {
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
   border-top: 1px solid var(--hairline);
 }
 
-/* the whole cell is the hit area (the name link stretches over it); the
-   links row sits above that layer and is pinned to the bottom so rows align */
 .project-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.5rem 1.5rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: stretch;
   border-bottom: 1px solid var(--hairline);
 }
 
-.project-card + .project-card {
-  padding-left: 1.5rem;
+/* the name link stretches over the row, so the whole row is the hit area;
+   the links row sits above that layer */
+.project-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.5rem 1.5rem 1.5rem 0;
+}
+
+.project-card-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem 0 1.5rem 1.5rem;
   border-left: 1px solid var(--hairline);
 }
 
-/* a short lime tick on the top rule marks the hovered / focused card */
+/* a short lime tick on the top rule marks the hovered / focused row */
 .project-card::before {
   content: "";
   position: absolute;
@@ -769,21 +783,18 @@ main:focus {
   transition: transform 0.2s ease;
 }
 
-.project-card + .project-card::before {
-  left: 1.5rem;
-}
-
 .project-card:hover::before,
 .project-card:focus-within::before {
   transform: scaleX(1);
 }
 
 .project-card-name {
-  margin: 0.5rem 0 0.4rem;
-  font-family: var(--sans);
+  margin: 0;
+  font-family: var(--serif);
   font-weight: 500;
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
 .project-card-name a {
@@ -819,16 +830,17 @@ main:focus {
   color: var(--lime);
 }
 
-/* less text: clamped on the home page; the full line is on /projects */
 .project-card-desc {
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
+  margin: 0;
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.project-card-sep {
+  margin: 0 0.6em;
+  color: var(--dim);
 }
 
 /* paper · demo · blog post, mono and quiet; each link is a 44px-tall target */
@@ -838,10 +850,9 @@ main:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 0 1.25rem;
-  margin-top: auto;
-  padding-top: 0.5rem;
+  margin: 0;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
 }
 
 .project-card-links a {
@@ -1594,24 +1605,6 @@ code[data-theme] span {
    ============================================================ */
 
 @media (max-width: 60rem) {
-  .project-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .project-card:nth-child(odd) {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .project-card:nth-child(even) {
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--hairline);
-  }
-  .project-card:nth-child(odd)::before {
-    left: 0;
-  }
-  .project-card-desc {
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
   .post-main {
     grid-template-columns: minmax(0, 1fr) auto;
     padding: 1.4rem 0;
@@ -1659,16 +1652,18 @@ code[data-theme] span {
     gap: 0 0.9rem;
     font-size: 0.75rem;
   }
-  .project-grid {
-    grid-template-columns: 1fr;
+  .project-card {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .project-card,
-  .project-card:nth-child(even) {
-    padding: 1.25rem 0;
+  .project-card-head {
+    padding: 1.25rem 0 0.25rem;
+  }
+  .project-card-body {
+    padding: 0 0 1.25rem;
     border-left: 0;
   }
-  .project-card:nth-child(even)::before {
-    left: 0;
+  .project-card-desc {
+    font-size: 1.05rem;
   }
   .log-row {
     grid-template-columns: 1fr;

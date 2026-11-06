@@ -107,50 +107,54 @@ export default function Home() {
               : null;
             return (
               <li key={project.name} className="project-card" data-reveal-row>
-                <p className="post-date project-card-meta">
-                  {project.year}
-                  {where ? (
-                    <>
-                      <span className="kicker-sep" aria-hidden="true">
-                        /
-                      </span>
-                      {where}
-                    </>
-                  ) : null}
-                </p>
-                <h3 className="project-card-name">
-                  {project.url ? (
-                    isFile(project.url) ? (
-                      <a href={project.url} target="_blank" rel="noreferrer">
-                        {project.name}
-                        <span className="project-card-ext" aria-hidden="true">
-                          ↗
-                        </span>
-                        <span className="sr-only"> (opens in a new tab)</span>
-                      </a>
-                    ) : (
-                      <Link href={project.url}>{project.name}</Link>
-                    )
-                  ) : (
-                    project.name
-                  )}
-                </h3>
-                <p className="project-card-desc">{project.description}</p>
-                {links.length ? (
-                  <p className="project-card-links">
-                    {links.map((link) =>
-                      isFile(link.href) ? (
-                        <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
-                          {link.label}
+                <div className="project-card-head">
+                  <h3 className="project-card-name">
+                    {project.url ? (
+                      isFile(project.url) ? (
+                        <a href={project.url} target="_blank" rel="noreferrer">
+                          {project.name}
+                          <span className="project-card-ext" aria-hidden="true">
+                            ↗
+                          </span>
+                          <span className="sr-only"> (opens in a new tab)</span>
                         </a>
                       ) : (
-                        <Link key={link.label} href={link.href}>
-                          {link.label}
-                        </Link>
+                        <Link href={project.url}>{project.name}</Link>
                       )
+                    ) : (
+                      project.name
                     )}
+                  </h3>
+                  <p className="post-date project-card-meta">
+                    {project.year}
+                    {where ? (
+                      <>
+                        <span className="project-card-sep" aria-hidden="true">
+                          |
+                        </span>
+                        {where}
+                      </>
+                    ) : null}
                   </p>
-                ) : null}
+                </div>
+                <div className="project-card-body">
+                  <p className="project-card-desc">{project.description}</p>
+                  {links.length ? (
+                    <p className="project-card-links">
+                      {links.map((link) =>
+                        isFile(link.href) ? (
+                          <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link key={link.label} href={link.href}>
+                            {link.label}
+                          </Link>
+                        )
+                      )}
+                    </p>
+                  ) : null}
+                </div>
               </li>
             );
           })}

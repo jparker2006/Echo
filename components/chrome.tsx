@@ -68,11 +68,17 @@ export function SectionHead({
 }
 
 /** The page ends on a horizon: an engraved teal planet limb with a burnt-orange
-    glow and a rocket lifting off it. Two rows of quiet links sit above it. */
+    glow and a rocket lifting off it. The wordmark and the links sit above it. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <span className="foot-brand">
+          <span className="brand-word">echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </span>
         <nav className="foot-links" aria-label="Elsewhere">
           <Link href="/">posts</Link>
           <Link href="/projects">projects</Link>

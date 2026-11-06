@@ -389,23 +389,32 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
       p.line(xy, ORANGE, 0.12, 7);
       const warmAll = xy.map(() => true);
       strokeSeries(p, xy, bright.map((b) => clamp01(0.35 + 0.65 * b)), null, warmAll, B);
+
+      // a crisp orange rim right under the rocket, fading out along the limb
+      const rim: number[] = [];
+      for (let i = 0; i < xy.length; i += 2) if (Math.abs(xy[i] - cx) < 0.3 * W) rim.push(xy[i], xy[i + 1]);
+      p.line(rim, ORANGE, 0.9, 1.6);
     }
   }
 
-  // the rocket on its exhaust, lifting straight off the limb
-  const h = Math.max(16, Math.min(40, H * 0.15));
-  p.disc(cx, y0, Math.max(40, W * 0.07), [
-    [0, ORANGE_HOT, 0.5],
-    [0.25, ORANGE, 0.2],
+  // the rocket on its exhaust, lifting straight off the limb: the focal point of the footer
+  const h = Math.max(18, Math.min(56, H * 0.19));
+  const plume = h * 2.5;
+  const flicker = 1 + 0.12 * Math.sin(t * 9);
+  p.disc(cx, y0, Math.max(60, W * 0.05), [
+    [0, ORANGE_HOT, 0.6],
+    [0.3, ORANGE, 0.25],
     [1, ORANGE, 0],
   ]);
-  const flicker = 1 + 0.2 * Math.sin(t * 9);
-  for (let f = 0; f <= 6; f++) {
-    const ang = -0.22 + (0.44 * f) / 6;
-    p.line([cx, y0, cx + Math.sin(ang) * h * 0.55, y0 - Math.cos(ang) * h * 0.55], ORANGE, 0.22, 0.8);
+  // the plume: three stacked cones, wide and faint outside, narrow and hot inside
+  for (const [wf, lf, col, a] of [
+    [0.55, 1, ORANGE, 0.22],
+    [0.34, 1, ORANGE, 0.42],
+    [0.15, 0.9 * flicker, ORANGE_HOT, 0.9],
+  ] as const) {
+    const hw = h * wf;
+    p.fill([cx - hw, y0, cx, y0 - plume * lf, cx + hw, y0], col, a);
   }
-  p.line([cx, y0 - 1, cx, y0 - h * 0.95], ORANGE, 0.2, 5);
-  p.line([cx, y0 - 1, cx, y0 - h * 0.95], ORANGE_HOT, 0.9, 1.3 * flicker);
   const body: [number, number][] = [
     [0, -1.05],
     [0.1, -0.7],
@@ -417,7 +426,7 @@ export function paintFooter(p: Painter, W: number, H: number, t: number, light: 
   ];
   const poly: number[] = [];
   for (const [dx, dy] of body) poly.push(cx + dx * h, y0 + dy * h);
-  p.fill(poly, ROCKET, 0.8);
+  p.fill(poly, ROCKET, 0.95);
   p.disc(cx, y0 - 0.7 * h, h * 0.06, [
     [0, [9, 14, 18], 0.9],
     [1, [9, 14, 18], 0],

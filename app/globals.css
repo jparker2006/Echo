@@ -5,12 +5,13 @@
    ============================================================ */
 
 :root {
-  /* Space-ranger palette: near-black canvas, off-white reading text,
-     purple only in the ASCII art, and lime as the single UI accent
+  /* Engraved-planet palette (M1): near-black canvas, off-white reading text,
+     teal/petrol for the art, burnt orange only for light (limb glow, exhaust),
+     and lime as the single UI accent
      (links, prompt sigil, focus ring, current nav, the reading rocket's
      flame). Always dark. Contrast on --paper: ink 16.7:1 · ink-2 11.8:1 ·
      muted 7.5:1 · dim 5.7:1 · lime 15.5:1. */
-  --paper: #09090d; /* near-black, a hair of violet */
+  --paper: #09090b; /* near-black */
   --surface: #121118;
   --surface-2: #17151f;
   --ink: #eceaf2; /* off-white — long-form reading text */
@@ -20,7 +21,8 @@
   --hairline: #26232f;
   --hairline-2: #36323f;
 
-  --purple: #a56bff; /* the planet */
+  --teal: #3c8d9d; /* the planet's engraving */
+  --ember: #d87532; /* burnt-orange light: limb glow, exhaust */
   --accent: #c3a3ff; /* legacy token, still read by the Snake Eyes demo */
   --lime: #c6f35a; /* restrained: sigil, focus, current page, progress */
   --amber: var(--lime); /* legacy token name, still read by the Snake Eyes demo */
@@ -313,28 +315,25 @@ main:focus {
 
 .section-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.75rem;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  font-weight: 400;
+  margin-bottom: 1.25rem;
+  font-family: var(--serif);
+  font-weight: 500;
   color: var(--ink);
 }
 
-.section-cmd,
+.section-title {
+  font-size: clamp(2.4rem, 4.6vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
 .section-aside {
   white-space: nowrap;
-}
-
-.section-rule {
-  flex: 1;
-  min-width: 1.5rem;
-  height: 1px;
-  background-image: var(--dots);
-}
-
-.section-aside {
+  font-family: var(--mono);
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -437,12 +436,27 @@ main:focus {
 
 .hero-title {
   margin: 1.25rem 0 0;
-  font-family: var(--sans);
+  font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(2.6rem, 5.4vw, 4.75rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  font-size: clamp(2.8rem, 5.6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
   text-wrap: balance;
+}
+
+/* a thin vertical rule between the hero copy and the planet */
+.hero-copy {
+  position: relative;
+}
+
+.hero-copy::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(-1 * clamp(0.75rem, 2.2vw, 1.75rem));
+  width: 1px;
+  background: var(--hairline-2);
 }
 
 .hero-title a {
@@ -541,91 +555,62 @@ main:focus {
 }
 
 /* ============================================================
-   ascii scene — live 3D planet, ring + rocket (canvas over a
-   server-rendered still frame; see components/ascii-live.tsx)
+   orbit scenes — the engraved planet (hero) and the footer horizon.
+   Each is an SVG still frame; a canvas (components/orbit-canvas.tsx)
+   paints live frames over it once JS runs.
    ============================================================ */
 
-.hero-art {
-  container-type: inline-size;
-  min-width: 0;
-  /* let the planet run into the right gutter so it reads as a scene,
-     not a boxed illustration */
-  margin-right: calc(-1 * var(--gutter));
-  /* on short landscape screens, shrink the planet to fit the fold */
-  justify-self: end;
-  width: calc(100% + var(--gutter));
-  max-width: calc((100svh - 14rem) * 48 / 37.8);
-}
-
-.ascii-scene {
+.orbit-scene {
   position: relative;
-  /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
-  aspect-ratio: 48 / 37.8;
-  transform-style: preserve-3d;
-}
-
-/* only mice tilt the scene, so only they need it on its own layer */
-@media (hover: hover) and (pointer: fine) {
-  .ascii-scene {
-    will-change: transform;
-  }
-}
-
-.ascii-static {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none; /* keep "==" and "--" as separate cells */
-  font-size: calc(100cqi / 48);
-  line-height: 1.05;
-  white-space: pre;
   overflow: hidden;
-  user-select: none;
 }
 
-/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
-.ascii-static--narrow {
-  display: none;
-  font-size: calc(100cqi / 36);
-}
-
-/* phones get the coarser grid, matching what the canvas switches to */
-@container (max-width: 519.98px) {
-  .ascii-static--wide {
-    display: none;
-  }
-  .ascii-static--narrow {
-    display: block;
-  }
-}
-
-.ascii-canvas {
+.orbit-svg,
+.orbit-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
+}
+
+.orbit-canvas {
   opacity: 0;
 }
 
-/* the canvas starts on the same frame as the <pre>, so a short crossfade
-   hides any sub-pixel difference (and the coarser grid swap on phones) */
-.ascii-static,
-.ascii-canvas {
-  transition: opacity 0.45s ease, visibility 0s linear 0.45s;
-}
-
-.ascii-scene.is-live .ascii-static {
+.orbit-scene.is-live .orbit-svg {
   opacity: 0;
   visibility: hidden;
 }
 
-.ascii-scene.is-live .ascii-canvas {
+.orbit-scene.is-live .orbit-canvas {
   opacity: 1;
+}
+
+.orbit-svg,
+.orbit-canvas {
+  transition: opacity 0.45s ease, visibility 0s linear 0.45s;
+}
+
+.orbit-scene.is-live .orbit-canvas {
   transition-delay: 0s;
 }
 
+.orbit-scene--hero {
+  aspect-ratio: 1 / 0.95;
+}
+
+.hero-art {
+  container-type: inline-size;
+  min-width: 0;
+  justify-self: end;
+  width: 100%;
+  max-width: calc((100svh - 14rem) * 1.05);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ascii-static,
-  .ascii-canvas {
+  .orbit-svg,
+  .orbit-canvas {
     transition: none;
   }
 }
@@ -1539,26 +1524,37 @@ code[data-theme] span {
   font-size: 0.74rem;
 }
 
-/* two quiet links in the sky, aligned to the page's right edge */
 .foot-inner {
   position: relative;
   z-index: 1;
-  max-width: var(--page);
+  width: min(var(--page), calc(100% - 2 * var(--gutter)));
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: clamp(1.25rem, 3vw, 2rem) 0 0;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  border-top: 1px solid var(--hairline-2);
+  margin-top: clamp(1.5rem, 4vw, 3rem);
+}
+
+.foot-brand {
+  font-size: 1.5rem;
 }
 
 .foot-links {
   display: flex;
-  gap: 1.75rem;
+  flex-wrap: wrap;
+  gap: 0 1.75rem;
+  font-size: 0.85rem;
 }
 
 .foot-links a {
   display: inline-block;
-  padding: 0.75rem 0;
-  color: var(--dim);
+  min-height: 44px;
+  line-height: 44px;
+  color: var(--muted);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 1px;
@@ -1571,37 +1567,14 @@ code[data-theme] span {
   text-decoration-color: var(--lime);
 }
 
-/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
-.foot-horizon {
-  margin-top: -1.5rem;
-  user-select: none;
+.foot-links a:focus-visible {
+  outline-offset: 0;
 }
 
-.foot-art {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none;
-  line-height: 1.05;
-  white-space: pre;
-  overflow: hidden;
-}
-
-.foot-art--wide {
-  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
-}
-
-.foot-art--narrow {
-  display: none;
-  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
-}
-
-@container (max-width: 639.98px) {
-  .foot-art--wide {
-    display: none;
-  }
-  .foot-art--narrow {
-    display: block;
-  }
+/* the footer art: a band no taller than 300px at any width */
+.orbit-scene--footer {
+  height: clamp(170px, 20vw, 288px);
+  margin-top: clamp(0.5rem, 2vw, 1.25rem);
 }
 
 /* ============================================================
@@ -1651,8 +1624,10 @@ code[data-theme] span {
   .hero::before {
     mask-image: radial-gradient(ellipse 90% 60% at 50% 32%, #000 40%, transparent 100%);
   }
+  .hero-copy::after {
+    display: none;
+  }
   .hero-art {
-    order: -1;
     justify-self: stretch;
     width: auto;
     max-width: none;

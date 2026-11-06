@@ -2,8 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { RevealRoot } from "@/components/motion/reveal-root";
 import { NavLinks } from "@/components/nav-links";
-import { HorizonLive } from "@/components/horizon-live";
-import { HORIZON_NARROW, HORIZON_WIDE, horizonRuns, PALETTE } from "@/lib/ascii";
+import { FooterOrbit } from "@/components/orbit-scene";
 
 /** The shared site header: "echo" wordmark top-left (links home),
     terminal-style nav top-right, on one line. Identical on every page. */
@@ -41,63 +40,38 @@ export function Prompt({ command }: { command: string }) {
   );
 }
 
-/** Mono section heading with a dotted rule and an optional right-hand note,
-    e.g. `ls /posts ··········· 2 posts`. */
-export function SectionHead({
-  id,
-  command,
-  aside,
-}: {
-  id?: string;
-  command: string;
-  aside?: ReactNode;
-}) {
+/** A section title in the reading serif, with an optional mono note on the right. */
+export function SectionHead({ id, title, aside }: { id?: string; title: string; aside?: ReactNode }) {
   return (
     <h2 className="section-head" id={id} data-reveal>
-      <span className="section-cmd">
-        <span className="cmd-sigil">$</span> {command}
-      </span>
-      <span className="section-rule" aria-hidden="true" />
+      <span className="section-title">{title}</span>
       {aside ? <span className="section-aside">{aside}</span> : null}
     </h2>
   );
 }
 
-/** The page ends on a horizon: the limb of a huge purple planet in ASCII,
-    full-bleed, with two quiet links in the sky above it. One still frame per
-    grid size; CSS shows the one that fits, and HorizonLive re-lights it to
-    follow the mouse. */
+/** The page ends on a horizon: a wordmark and one row of links above a wide
+    engraved planet limb, lit by a burnt-orange horizon and crossed by orbits. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <Link href="/" className="brand foot-brand" aria-label="echo, home">
+          <span className="brand-word">echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </Link>
         <nav className="foot-links" aria-label="Elsewhere">
-          <a href="/rss.xml">rss</a>
+          <Link href="/">posts</Link>
+          <Link href="/projects">projects</Link>
+          <Link href="/about">about</Link>
           <a href="https://github.com/jparker2006">github</a>
+          <a href="/rss.xml">rss</a>
         </nav>
       </div>
-      <HorizonLive>
-        <HorizonFrame grid={HORIZON_WIDE} className="foot-art foot-art--wide" />
-        <HorizonFrame grid={HORIZON_NARROW} className="foot-art foot-art--narrow" />
-      </HorizonLive>
+      <FooterOrbit />
     </footer>
-  );
-}
-
-function HorizonFrame({ grid, className }: { grid: { W: number; H: number }; className: string }) {
-  return (
-    <pre className={className} data-w={grid.W} data-h={grid.H}>
-      {horizonRuns(grid.W, grid.H).map((runs, i) => (
-        <span key={i}>
-          {runs.map((run, j) => (
-            <span key={j} style={run.tone ? { color: PALETTE[run.tone] } : undefined}>
-              {run.text}
-            </span>
-          ))}
-          {"\n"}
-        </span>
-      ))}
-    </pre>
   );
 }
 

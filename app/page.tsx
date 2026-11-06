@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
-import { AsciiScene } from "@/components/ascii-art";
+import { HeroPlanet } from "@/components/orbit-scene";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -22,11 +22,11 @@ export default function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="kicker" data-reveal>
-              latest
-              <span className="kicker-sep" aria-hidden="true">
-                /
-              </span>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+              <span className="kicker-sep" aria-hidden="true">
+                |
+              </span>
+              {latest.minutes} min
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
@@ -46,11 +46,10 @@ export default function Home() {
                   read <span className="cta-key" aria-hidden="true">↵</span>
                 </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>
-            <AsciiScene />
+            <HeroPlanet />
           </div>
         </section>
       ) : null}
@@ -58,7 +57,7 @@ export default function Home() {
       <section className="home-section" aria-labelledby="posts-head">
         <SectionHead
           id="posts-head"
-          command="ls /posts"
+          title="posts"
           aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
         />
         <ol className="post-list">
@@ -81,7 +80,7 @@ export default function Home() {
       <section className="home-section" aria-labelledby="projects-head">
         <SectionHead
           id="projects-head"
-          command="ls /projects"
+          title="projects"
           aside={<Link href="/projects">all {projects.length} →</Link>}
         />
         <ul className="project-grid">

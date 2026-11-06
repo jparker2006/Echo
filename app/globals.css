@@ -1676,6 +1676,20 @@ code[data-theme] span {
     grid-column: 1;
     text-align: left;
   }
+  /* footer links: one quiet row, flush with the column, 44px targets */
+  .foot-inner {
+    justify-content: flex-start;
+  }
+  .foot-links {
+    flex-wrap: nowrap;
+    gap: 0 1.1rem;
+  }
+  .foot-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+  }
 }
 
 /* ============================================================

@@ -6,7 +6,7 @@
 
 :root {
   /* Space-ranger palette: near-black canvas, off-white reading text,
-     purple only in the ASCII art, and lime as the single UI accent
+     teal and burnt orange only in the engraved art, and lime as the single UI accent
      (links, prompt sigil, focus ring, current nav, the reading rocket's
      flame). Always dark. Contrast on --paper: ink 16.7:1 · ink-2 11.8:1 ·
      muted 7.5:1 · dim 5.7:1 · lime 15.5:1. */
@@ -20,7 +20,7 @@
   --hairline: #26232f;
   --hairline-2: #36323f;
 
-  --purple: #a56bff; /* the planet */
+  --teal: #3c8d9d; /* the engraved planet */
   --accent: #c3a3ff; /* legacy token, still read by the Snake Eyes demo */
   --lime: #c6f35a; /* restrained: sigil, focus, current page, progress */
   --amber: var(--lime); /* legacy token name, still read by the Snake Eyes demo */
@@ -541,93 +541,100 @@ main:focus {
 }
 
 /* ============================================================
-   ascii scene — live 3D planet, ring + rocket (canvas over a
-   server-rendered still frame; see components/ascii-live.tsx)
+   guilloche planet — the hero planet is an engraved canvas drawing
+   over a server-rendered SVG still (components/guilloche.tsx)
    ============================================================ */
 
 .hero-art {
-  container-type: inline-size;
   min-width: 0;
-  /* let the planet run into the right gutter so it reads as a scene,
-     not a boxed illustration */
+  /* let the planet run into the right gutter so it reads as a scene */
   margin-right: calc(-1 * var(--gutter));
-  /* on short landscape screens, shrink the planet to fit the fold */
-  justify-self: end;
   width: calc(100% + var(--gutter));
   max-width: calc((100svh - 14rem) * 48 / 37.8);
+  justify-self: end;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  /* the vertical hairline between the hero copy and the art */
+  padding-left: clamp(1rem, 3vw, 2rem);
+  border-left: 1px solid var(--hairline-2);
 }
 
-.ascii-scene {
+/* shared by the hero and the footer: a still SVG, then a canvas over it */
+.guil {
   position: relative;
-  /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
-  aspect-ratio: 48 / 37.8;
-  transform-style: preserve-3d;
-}
-
-/* only mice tilt the scene, so only they need it on its own layer */
-@media (hover: hover) and (pointer: fine) {
-  .ascii-scene {
-    will-change: transform;
-  }
-}
-
-.ascii-static {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none; /* keep "==" and "--" as separate cells */
-  font-size: calc(100cqi / 48);
-  line-height: 1.05;
-  white-space: pre;
   overflow: hidden;
-  user-select: none;
 }
 
-/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
-.ascii-static--narrow {
-  display: none;
-  font-size: calc(100cqi / 36);
+.guil--hero {
+  width: 100%;
+  aspect-ratio: 48 / 37.8;
 }
 
-/* phones get the coarser grid, matching what the canvas switches to */
-@container (max-width: 519.98px) {
-  .ascii-static--wide {
-    display: none;
-  }
-  .ascii-static--narrow {
-    display: block;
-  }
-}
-
-.ascii-canvas {
+.guil-static,
+.guil-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0;
+  display: block;
+  pointer-events: none;
 }
 
-/* the canvas starts on the same frame as the <pre>, so a short crossfade
-   hides any sub-pixel difference (and the coarser grid swap on phones) */
-.ascii-static,
-.ascii-canvas {
+.guil-canvas {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.guil-static {
   transition: opacity 0.45s ease, visibility 0s linear 0.45s;
 }
 
-.ascii-scene.is-live .ascii-static {
+.guil.is-live .guil-canvas {
+  opacity: 1;
+}
+
+.guil.is-live .guil-static {
   opacity: 0;
   visibility: hidden;
 }
 
-.ascii-scene.is-live .ascii-canvas {
-  opacity: 1;
-  transition-delay: 0s;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .ascii-static,
-  .ascii-canvas {
+  .guil-static,
+  .guil-canvas {
     transition: none;
   }
+}
+
+/* section titles: serif, large, on a solid hairline */
+.section-head {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 5vw, 3.2rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  align-items: flex-end;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  display: inline-block;
+}
+
+.section-rule {
+  height: 1px;
+  background-image: none;
+  background-color: var(--hairline-2);
+  align-self: flex-end;
+  margin-bottom: 0.45em;
+}
+
+.section-aside {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  margin-bottom: 0.2em;
 }
 
 /* ============================================================
@@ -1571,37 +1578,15 @@ code[data-theme] span {
   text-decoration-color: var(--lime);
 }
 
-/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
+/* the footer horizon: an engraved limb, never taller than 300px */
 .foot-horizon {
   margin-top: -1.5rem;
   user-select: none;
 }
 
-.foot-art {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none;
-  line-height: 1.05;
-  white-space: pre;
-  overflow: hidden;
-}
-
-.foot-art--wide {
-  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
-}
-
-.foot-art--narrow {
-  display: none;
-  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
-}
-
-@container (max-width: 639.98px) {
-  .foot-art--wide {
-    display: none;
-  }
-  .foot-art--narrow {
-    display: block;
-  }
+.foot-horizon .guil--footer,
+.guil--footer {
+  height: clamp(150px, 21vw, 300px);
 }
 
 /* ============================================================
@@ -1652,11 +1637,13 @@ code[data-theme] span {
     mask-image: radial-gradient(ellipse 90% 60% at 50% 32%, #000 40%, transparent 100%);
   }
   .hero-art {
-    order: -1;
     justify-self: stretch;
+    display: block;
     width: auto;
     max-width: none;
     margin-inline: calc(-1 * var(--gutter));
+    padding-left: 0;
+    border-left: 0;
   }
 }
 
@@ -2007,3 +1994,13 @@ html[data-motion] [data-print] {
 .se-page-head .masthead {
   padding-top: 0;
 }
+
+/* serif titles win over the base rules above (kept last for the cascade) */
+.hero-title,
+.post-title,
+.project-card-name {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+

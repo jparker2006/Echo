@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
-import { AsciiScene } from "@/components/ascii-art";
+import { HeroPlanet } from "@/components/guilloche-art";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -50,7 +50,7 @@ export default function Home() {
             </p>
           </div>
           <div className="hero-art" data-reveal>
-            <AsciiScene />
+            <HeroPlanet />
           </div>
         </section>
       ) : null}

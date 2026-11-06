@@ -2,8 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { RevealRoot } from "@/components/motion/reveal-root";
 import { NavLinks } from "@/components/nav-links";
-import { HorizonLive } from "@/components/horizon-live";
-import { HORIZON_NARROW, HORIZON_WIDE, horizonRuns, PALETTE } from "@/lib/ascii";
+import { HorizonEngraving } from "@/components/engraving";
 
 /** The shared site header: "echo" wordmark top-left (links home),
     terminal-style nav top-right, on one line. Identical on every page. */
@@ -63,41 +62,30 @@ export function SectionHead({
   );
 }
 
-/** The page ends on a horizon: the limb of a huge purple planet in ASCII,
-    full-bleed, with two quiet links in the sky above it. One still frame per
-    grid size; CSS shows the one that fits, and HorizonLive re-lights it to
-    follow the mouse. */
+/** The page ends on a horizon: a wordmark and one row of links above a wide
+    engraved planet limb (components/engraving.tsx). */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
       <div className="foot-inner">
+        <Link href="/" className="brand foot-brand" aria-label="echo, home">
+          <span className="brand-word">echo</span>
+          <span className="brand-cursor" aria-hidden="true">
+            _
+          </span>
+        </Link>
         <nav className="foot-links" aria-label="Elsewhere">
+          <Link href="/">posts</Link>
+          <Link href="/projects">projects</Link>
+          <Link href="/about">about</Link>
+          <a href="https://github.com/jparker2006" target="_blank" rel="noreferrer">
+            github
+          </a>
           <a href="/rss.xml">rss</a>
-          <a href="https://github.com/jparker2006">github</a>
         </nav>
       </div>
-      <HorizonLive>
-        <HorizonFrame grid={HORIZON_WIDE} className="foot-art foot-art--wide" />
-        <HorizonFrame grid={HORIZON_NARROW} className="foot-art foot-art--narrow" />
-      </HorizonLive>
+      <HorizonEngraving />
     </footer>
-  );
-}
-
-function HorizonFrame({ grid, className }: { grid: { W: number; H: number }; className: string }) {
-  return (
-    <pre className={className} data-w={grid.W} data-h={grid.H}>
-      {horizonRuns(grid.W, grid.H).map((runs, i) => (
-        <span key={i}>
-          {runs.map((run, j) => (
-            <span key={j} style={run.tone ? { color: PALETTE[run.tone] } : undefined}>
-              {run.text}
-            </span>
-          ))}
-          {"\n"}
-        </span>
-      ))}
-    </pre>
   );
 }
 

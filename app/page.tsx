@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
-import { Shell, SectionHead } from "@/components/chrome";
-import { AsciiScene } from "@/components/ascii-art";
+import { Shell } from "@/components/chrome";
+import { PlanetEngraving } from "@/components/engraving";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -22,11 +22,11 @@ export default function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="kicker" data-reveal>
-              latest
-              <span className="kicker-sep" aria-hidden="true">
-                /
-              </span>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+              <span className="kicker-sep" aria-hidden="true">
+                |
+              </span>
+              {latest.minutes} min
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
@@ -46,21 +46,21 @@ export default function Home() {
                   read <span className="cta-key" aria-hidden="true">↵</span>
                 </span>
               </Link>
-              <span className="hero-meta">{latest.minutes} min</span>
             </p>
           </div>
           <div className="hero-art" data-reveal>
-            <AsciiScene />
+            <PlanetEngraving />
           </div>
         </section>
       ) : null}
 
       <section className="home-section" aria-labelledby="posts-head">
-        <SectionHead
-          id="posts-head"
-          command="ls /posts"
-          aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
-        />
+        <header className="home-head" data-reveal>
+          <h2 className="home-title" id="posts-head">
+            posts
+          </h2>
+          <span className="home-aside">{`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}</span>
+        </header>
         <ol className="post-list">
           {posts.map((post) => (
             <li key={post.slug} className="post-item" data-reveal-row>
@@ -79,11 +79,14 @@ export default function Home() {
       </section>
 
       <section className="home-section" aria-labelledby="projects-head">
-        <SectionHead
-          id="projects-head"
-          command="ls /projects"
-          aside={<Link href="/projects">all {projects.length} →</Link>}
-        />
+        <header className="home-head" data-reveal>
+          <h2 className="home-title" id="projects-head">
+            projects
+          </h2>
+          <span className="home-aside">
+            <Link href="/projects">all {projects.length} →</Link>
+          </span>
+        </header>
         <ul className="project-grid">
           {picks.map((project) => {
             // external URLs and static files open in a new tab; app routes stay in-tab

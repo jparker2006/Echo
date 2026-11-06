@@ -18,6 +18,7 @@
   --muted: #a19cb3;
   --dim: #8b8699;
   --hairline: #26232f;
+  --rule: #6b6878; /* M1 hairline rules, lighter than the card borders */
   --hairline-2: #36323f;
 
   --purple: #a56bff; /* the planet */
@@ -431,17 +432,29 @@ main:focus {
   }
 }
 
+/* the M1 vertical rule between the copy and the planet, in the gap */
 .hero-copy {
+  position: relative;
   max-width: 32rem;
+}
+
+.hero-copy::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(clamp(1.5rem, 4vw, 3.5rem) / -2);
+  width: 1px;
+  background: var(--rule);
 }
 
 .hero-title {
   margin: 1.25rem 0 0;
-  font-family: var(--sans);
-  font-weight: 500;
+  font-family: var(--serif);
+  font-weight: 600;
   font-size: clamp(2.6rem, 5.4vw, 4.75rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -487,9 +500,7 @@ main:focus {
   align-items: center;
   gap: 2.5ch;
   min-height: 44px;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--hairline-2);
-  border-radius: 3px;
+  padding: 0.6rem 0;
   color: var(--ink);
   text-decoration: none;
   transition: border-color 0.18s ease;
@@ -513,8 +524,10 @@ main:focus {
 }
 
 /* hover lights the border; keyboard focus keeps the global ring instead */
-.cmd-link:hover {
-  border-color: var(--lime);
+.cmd-link:hover .cta-cmd {
+  text-decoration: underline;
+  text-decoration-color: var(--lime);
+  text-underline-offset: 0.3em;
 }
 
 .cmd-link:hover .cta-hint,
@@ -541,93 +554,123 @@ main:focus {
 }
 
 /* ============================================================
-   ascii scene — live 3D planet, ring + rocket (canvas over a
-   server-rendered still frame; see components/ascii-live.tsx)
+   engraved planet — contour-lined sphere + rings on a canvas
+   (components/engraving.tsx); the CSS fallback shows until it draws
    ============================================================ */
 
 .hero-art {
   container-type: inline-size;
   min-width: 0;
-  /* let the planet run into the right gutter so it reads as a scene,
-     not a boxed illustration */
+  /* let the planet run into the right gutter so it reads as a scene */
   margin-right: calc(-1 * var(--gutter));
-  /* on short landscape screens, shrink the planet to fit the fold */
   justify-self: end;
   width: calc(100% + var(--gutter));
-  max-width: calc((100svh - 14rem) * 48 / 37.8);
+  max-width: calc(100svh - 14rem);
 }
 
-.ascii-scene {
+.engrave {
   position: relative;
-  /* 80 × 36 cells at 0.6em × 1.05em → keep the box at that ratio */
-  aspect-ratio: 48 / 37.8;
-  transform-style: preserve-3d;
-}
-
-/* only mice tilt the scene, so only they need it on its own layer */
-@media (hover: hover) and (pointer: fine) {
-  .ascii-scene {
-    will-change: transform;
-  }
-}
-
-.ascii-static {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none; /* keep "==" and "--" as separate cells */
-  font-size: calc(100cqi / 48);
-  line-height: 1.05;
-  white-space: pre;
   overflow: hidden;
-  user-select: none;
+  isolation: isolate;
 }
 
-/* 60 × 27 cells → 36em wide; same box ratio as the wide grid */
-.ascii-static--narrow {
-  display: none;
-  font-size: calc(100cqi / 36);
+.engrave--planet {
+  aspect-ratio: 1 / 1;
 }
 
-/* phones get the coarser grid, matching what the canvas switches to */
-@container (max-width: 519.98px) {
-  .ascii-static--wide {
-    display: none;
-  }
-  .ascii-static--narrow {
-    display: block;
-  }
-}
-
-.ascii-canvas {
+.engrave-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   opacity: 0;
+  transition: opacity 0.45s ease;
 }
 
-/* the canvas starts on the same frame as the <pre>, so a short crossfade
-   hides any sub-pixel difference (and the coarser grid swap on phones) */
-.ascii-static,
-.ascii-canvas {
-  transition: opacity 0.45s ease, visibility 0s linear 0.45s;
-}
-
-.ascii-scene.is-live .ascii-static {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.ascii-scene.is-live .ascii-canvas {
+.engrave.is-live .engrave-canvas {
   opacity: 1;
-  transition-delay: 0s;
+}
+
+.engrave.is-live .engrave-fallback {
+  opacity: 0;
+}
+
+.engrave-fallback {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+.engrave--planet .engrave-fallback {
+  background: radial-gradient(circle at 42% 38%, #1f6a78 0%, #123f49 42%, #0a2a31 72%, transparent 73%);
+  inset: 25%;
+  border-radius: 50%;
+}
+
+.engrave--planet .engrave-fallback::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: 40%;
+  height: 20%;
+  border: 1px solid rgba(185, 201, 198, 0.35);
+  border-radius: 50%;
+  transform: rotate(-17deg);
+}
+
+.engrave--horizon .engrave-fallback {
+  background: radial-gradient(120% 110% at 50% 118%, #123f49 0 58%, transparent 59%);
+}
+
+.engrave--horizon .engrave-fallback::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 42%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d87532 50%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ascii-static,
-  .ascii-canvas {
+  .engrave-canvas,
+  .engrave-fallback {
     transition: none;
   }
+}
+
+/* ============================================================
+   home — section titles in serif, with a rule and an aside
+   ============================================================ */
+
+.home-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 0.6rem;
+}
+
+.home-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.home-aside {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.home-aside a {
+  color: var(--ink);
 }
 
 /* ============================================================
@@ -1545,14 +1588,24 @@ code[data-theme] span {
   z-index: 1;
   max-width: var(--page);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: 1.25rem var(--gutter) 0;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.foot-brand {
+  font-size: 1.55rem;
 }
 
 .foot-links {
   display: flex;
-  gap: 1.75rem;
+  flex-wrap: wrap;
+  gap: 0 1.75rem;
+  font-size: 0.95rem;
 }
 
 .foot-links a {
@@ -1571,37 +1624,11 @@ code[data-theme] span {
   text-decoration-color: var(--lime);
 }
 
-/* the horizon art: 140 columns (60 on narrow screens) scaled to the full width */
-.foot-horizon {
+/* the horizon art: the canvas fills the width, never taller than 300px */
+.engrave--horizon {
   margin-top: -1.5rem;
+  height: min(300px, max(180px, 20vw));
   user-select: none;
-}
-
-.foot-art {
-  margin: 0;
-  font-family: var(--mono);
-  font-variant-ligatures: none;
-  line-height: 1.05;
-  white-space: pre;
-  overflow: hidden;
-}
-
-.foot-art--wide {
-  font-size: calc(100cqi / 84); /* 140 cols × 0.6em */
-}
-
-.foot-art--narrow {
-  display: none;
-  font-size: calc(100cqi / 36); /* 60 cols × 0.6em */
-}
-
-@container (max-width: 639.98px) {
-  .foot-art--wide {
-    display: none;
-  }
-  .foot-art--narrow {
-    display: block;
-  }
 }
 
 /* ============================================================
@@ -1651,8 +1678,10 @@ code[data-theme] span {
   .hero::before {
     mask-image: radial-gradient(ellipse 90% 60% at 50% 32%, #000 40%, transparent 100%);
   }
+  .hero-copy::after {
+    display: none;
+  }
   .hero-art {
-    order: -1;
     justify-self: stretch;
     width: auto;
     max-width: none;

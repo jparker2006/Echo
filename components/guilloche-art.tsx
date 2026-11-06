@@ -4,7 +4,7 @@ import { paintFooter, paintHero, STATIC_T, svgPainter } from "@/lib/guilloche";
 // the still frames are drawn at these sizes; CSS scales them with preserveAspectRatio
 const HERO = { W: 480, H: 378 };
 const FOOTER = { W: 1440, H: 300 };
-const STILL_Q = 0.42; // coarser lines keep the server markup small
+const STILL_Q = 0.5; // coarser lines keep the server markup small
 
 /** The hero planet. The server renders its still frame as SVG so it is never
     blank; GuillocheLive then draws live frames over it. Decorative. */

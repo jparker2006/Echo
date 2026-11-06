@@ -50,6 +50,12 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 function tealFor(b: number): RGB {
   return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
 }
+/** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
+const HERO_DEEP: RGB = [13, 50, 60];
+const HERO_LIGHT: RGB = [104, 178, 190];
+function heroTealFor(b: number): RGB {
+  return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
+}
 
 // ---- noise: seeded starfields and smooth value noise (periodic when fed a circle) ----
 
@@ -94,7 +100,8 @@ function strokeRun(
   i0: number,
   i1: number,
   B: number,
-  gain: number
+  gain: number,
+  ramp: (b: number) => RGB
 ) {
   let cur: number[] = [];
   let key = -1;
@@ -103,7 +110,7 @@ function strokeRun(
       const bi = key >> 1;
       const b = (bi + 0.5) / B;
       if (key & 1) p.line(cur, mix(ORANGE, ORANGE_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
-      else p.line(cur, tealFor(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
+      else p.line(cur, ramp(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
     }
     cur = [];
   };
@@ -129,7 +136,8 @@ function strokeSeries(
   ok: boolean[] | null,
   warm: boolean[] | null,
   B: number,
-  gain = 1
+  gain = 1,
+  ramp: (b: number) => RGB = tealFor
 ) {
   const n = bright.length;
   let i = 0;
@@ -140,7 +148,7 @@ function strokeSeries(
     }
     let j = i;
     while (j + 1 < n && (!ok || ok[j + 1])) j++;
-    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain);
+    if (j > i) strokeRun(p, xy, bright, warm, i, j, B, gain, ramp);
     i = j + 1;
   }
 }
@@ -192,23 +200,17 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const lm = Math.hypot(0.55, 0.5, 0.42);
   const L: [number, number, number] = [0.55 / lm, 0.5 / lm, 0.42 / lm]; // light: right, up, toward viewer
   const spin = t * 0.05;
-  const B = q >= 1 ? 8 : 3;
-  const NL = Math.round(96 * q);
-  const NS = Math.round(220 * q);
-  const NU = Math.round(160 * q);
-  const NR = Math.round(22 * q);
+  const B = 8;
+  const NL = Math.round(136 * q);
+  const NS = Math.round(260 * q);
+  const NU = Math.round(180 * q);
+  const NR = Math.round(28 * q);
   const psi = -0.32;
 
   starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
 
-  // warm halo in the sky
-  p.disc(cx, cy, R * 1.28, [
-    [0.78, ORANGE, 0],
-    [0.86, ORANGE, 0.11],
-    [1, ORANGE, 0],
-  ]);
-
-  // rings, back half (drawn under the body)
+  // rings, back half (drawn under the body). Teal everywhere; burnt orange
+  // only where the ring catches the sun.
   const ringPass = (front: boolean) => {
     for (let i = 0; i < NR; i++) {
       const a = R * (1.32 + (0.66 * i) / Math.max(1, NR - 1));
@@ -222,10 +224,10 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
         xy.push(cx + sx, cy - sy);
         const lit = (sx * L[0] + sy * L[1]) / a;
         ok.push(z > 0 === front);
-        warm.push(front && lit > 0.45);
+        warm.push(lit > 0.45);
         bright.push(front ? 0.3 + 0.55 * Math.max(0, lit) : 0.14);
       }
-      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5);
+      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5, heroTealFor);
     }
   };
   // one dotted outer orbit
@@ -243,9 +245,9 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     cy,
     R,
     [
-      [0, [22, 66, 76], 1],
-      [0.6, [7, 27, 32], 1],
-      [1, [3, 12, 15], 1],
+      [0, [18, 58, 68], 1],
+      [0.6, [6, 24, 29], 1],
+      [1, [2, 10, 13], 1],
     ],
     cx + L[0] * R * 0.4,
     cy - L[1] * R * 0.4
@@ -272,12 +274,12 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
       xy.push(cx + r * X, cy - r * y2);
       ok.push(z2 > 0);
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
-      bright.push(clamp01(0.06 + 0.78 * Math.max(0, d) ** 1.3 + 0.1 * w + 0.2 * (1 - z2) ** 4));
+      bright.push(clamp01(0.26 + 0.7 * Math.max(0, d) ** 1.0 + 0.1 * w + 0.12 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B);
+    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroTealFor);
   }
 
-  // crisp limb, and a burnt-orange rim on the lit side
+  // crisp limb, and a thin burnt-orange glow on the lit side
   const limb: number[] = [];
   for (let j = 0; j <= 120; j++) {
     const a = (TAU * j) / 120;
@@ -286,8 +288,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   p.line(limb, TEAL, 0.6, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
-    [1.1, 0.8, 7, 0.07],
-    [1.0, 0.8, 3, 0.2],
+    [0.9, 0.8, 2.4, 0.22],
     [0.9, 0.8, 1.1, 0.95],
   ] as const) {
     const arc: number[] = [];

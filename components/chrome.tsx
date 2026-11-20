@@ -2,10 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { RevealRoot } from "@/components/motion/reveal-root";
 import { NavLinks } from "@/components/nav-links";
-import { FooterHorizon } from "@/components/guilloche-art";
 
-/** The shared site header: "echo" wordmark top-left (links home),
-    terminal-style nav top-right, on one line. Identical on every page. */
+/** The shared site header: the cream "echo" wordmark (links home) and three quiet links. */
 export function SiteHeader() {
   return (
     <header className="masthead" data-reveal>
@@ -13,83 +11,38 @@ export function SiteHeader() {
         Skip to content
       </a>
       <Link href="/" className="brand" aria-label="echo, home">
-        <span className="brand-word">echo</span>
-        <span className="brand-cursor" aria-hidden="true">
-          _
-        </span>
+        echo
       </Link>
       <nav className="nav" aria-label="Primary">
-        <span className="prompt" aria-hidden="true">
-          <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>
-        </span>
         <NavLinks />
       </nav>
     </header>
   );
 }
 
-/** A terminal command line: `~ $ <command>`.
-    Shared across pages so the prompt styling stays identical:
-    "~" path is muted, the "$" sigil is lime, the command is off-white. */
-export function Prompt({ command }: { command: string }) {
+/** Small uppercase label that sits above a title. */
+export function Kicker({ children }: { children: ReactNode }) {
   return (
-    <p className="cmd" data-reveal>
-      <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>{" "}
-      <span className="cmd-text">{command}</span>
+    <p className="kicker" data-reveal>
+      {children}
     </p>
   );
 }
 
-/** Serif section title (`posts`, `projects`) on a hairline rule, with an optional
-    mono note on the right. The `ls /…` command stays in the accessible name. */
-export function SectionHead({
-  id,
-  command,
-  aside,
-}: {
-  id?: string;
-  command: string;
-  aside?: ReactNode;
-}) {
-  return (
-    <h2 className="section-head" id={id} data-reveal>
-      <span className="section-cmd">
-        <span className="sr-only">
-          <span className="cmd-sigil">$</span> {command}
-        </span>
-        <span className="section-title" aria-hidden="true">
-          {command.replace(/^ls \//, "")}
-        </span>
-      </span>
-      <span className="section-rule" aria-hidden="true" />
-      {aside ? <span className="section-aside">{aside}</span> : null}
-    </h2>
-  );
-}
-
-/** The page ends on a horizon: an engraved teal planet limb with a burnt-orange
-    glow and a rocket lifting off it. Two rows of quiet links sit above it. */
+/** One line of links, then the huge cream wordmark. */
 export function SiteFooter() {
   return (
     <footer className="site-foot">
-      <div className="foot-inner">
-        <p className="foot-brand">
-          <span className="brand-word">echo</span>
-          <span className="brand-cursor" aria-hidden="true">
-            _
-          </span>
-        </p>
-        <nav className="foot-links" aria-label="Elsewhere">
-          <Link href="/">posts</Link>
-          <Link href="/projects">projects</Link>
-          <Link href="/about">about</Link>
-          <a href="https://github.com/jparker2006">github</a>
-          <a href="/rss.xml">rss</a>
-        </nav>
-      </div>
-      <div className="foot-horizon">
-        <FooterHorizon />
-      </div>
+      <nav className="foot-links" aria-label="Elsewhere">
+        <Link href="/">Posts</Link>
+        <Link href="/projects">Projects</Link>
+        <Link href="/about">About</Link>
+        <a href="https://github.com/jparker2006">GitHub</a>
+        <a href="/rss.xml">RSS</a>
+      </nav>
+      <p className="foot-wordmark" aria-hidden="true">
+        echo
+      </p>
     </footer>
   );
 }

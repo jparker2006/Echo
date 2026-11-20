@@ -111,3 +111,13 @@ export function getAbout(): { title: string; content: string } {
     content,
   };
 }
+
+/** Compact date for list rows, e.g. "May 20, 2026". */
+export function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}

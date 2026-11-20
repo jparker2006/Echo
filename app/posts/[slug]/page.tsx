@@ -4,7 +4,6 @@ import Link from "next/link";
 import { getAllPosts, getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell } from "@/components/chrome";
-import { ReadingRocket } from "@/components/motion/reading-rocket";
 
 // Only render posts that exist on disk; unknown slugs 404.
 export const dynamicParams = false;
@@ -55,11 +54,11 @@ export default async function PostPage({
       <article className="article">
         <header className="article-head">
           <p className="kicker" data-reveal>
-            <Link href="/">posts</Link>
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
             <span className="kicker-sep" aria-hidden="true">
-              /
+              ·
             </span>
-            <span className="kicker-file">{post.slug}.md</span>
+            {post.minutes} min read
           </p>
           <h1 className="post-h1" data-reveal>{post.title}</h1>
           {post.description ? (
@@ -67,35 +66,33 @@ export default async function PostPage({
               {post.description}
             </p>
           ) : null}
-          <p className="post-meta" data-reveal>
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
-            <span>{post.minutes} min read</span>
-            {post.tags && post.tags.length > 0 ? (
-              <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
-            ) : null}
-          </p>
+          {post.tags && post.tags.length > 0 ? (
+            <ul className="tags" aria-label="Tags" data-reveal>
+              {post.tags.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          ) : null}
         </header>
         <div className="prose post-body" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
       <nav className="article-foot" aria-label="More posts">
         {older ? (
           <Link href={`/posts/${older.slug}`} className="pager pager--prev">
-            <span className="pager-label">← older</span>
+            <span className="pager-label">Older</span>
             <span className="pager-title">{older.title}</span>
           </Link>
         ) : null}
         {newer ? (
           <Link href={`/posts/${newer.slug}`} className="pager pager--next">
-            <span className="pager-label">newer →</span>
+            <span className="pager-label">Newer</span>
             <span className="pager-title">{newer.title}</span>
           </Link>
         ) : null}
       </nav>
       <p className="back">
-        <Link href="/">← cd ..</Link>
+        <Link href="/">← All posts</Link>
       </p>
-      {/* last in the page so keyboard users reach the landed rocket after the post */}
-      <ReadingRocket />
     </Shell>
   );
 }

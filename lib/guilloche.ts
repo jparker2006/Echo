@@ -32,12 +32,12 @@ export const STATIC_T = 4.2;
 
 const TAU = Math.PI * 2;
 const VIEW_TILT = 0.42; // the hero planet's north pole tips toward the viewer
-const TEAL_SHADOW: RGB = [18, 63, 73]; // #123f49
-const TEAL: RGB = [60, 141, 157]; // #3c8d9d
-const GLINT: RGB = [185, 201, 198]; // #b9c9c6
-const ORANGE: RGB = [216, 117, 50]; // #d87532 — light only
-const ORANGE_HOT: RGB = [255, 214, 170];
-const STAR: RGB = [214, 236, 238];
+const TEAL_SHADOW: RGB = [22, 38, 72]; // #162648 (blue engraving)
+const TEAL: RGB = [78, 122, 201]; // #4e7ac9
+const GLINT: RGB = [192, 206, 232]; // #c0cee8
+const ORANGE: RGB = [132, 168, 232]; // #84a8e8 — light only
+const ORANGE_HOT: RGB = [214, 226, 248];
+const STAR: RGB = [214, 222, 240];
 const ROCKET: RGB = [226, 233, 233];
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -51,8 +51,8 @@ function tealFor(b: number): RGB {
   return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
 }
 /** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
-const HERO_DEEP: RGB = [13, 50, 60];
-const HERO_LIGHT: RGB = [104, 178, 190];
+const HERO_DEEP: RGB = [16, 30, 62];
+const HERO_LIGHT: RGB = [138, 172, 232];
 function heroTealFor(b: number): RGB {
   return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
 }

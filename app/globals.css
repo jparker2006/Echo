@@ -1082,6 +1082,21 @@ code[data-theme] span {
   }
 }
 
+/* phones: the post copy first, then a short wide planet card,
+   so the Posts list starts near the first screen */
+@media (max-width: 760px) {
+  .hero {
+    gap: 24px;
+    padding-block: 28px 44px;
+  }
+  .hero-art {
+    padding: 0;
+  }
+  .hero-art .guil {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 @media (max-width: 600px) {
   body {
     font-size: 16px;

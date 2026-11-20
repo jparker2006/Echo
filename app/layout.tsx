@@ -1,26 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Newsreader, JetBrains_Mono } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const serif = Newsreader({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-serif",
-});
-
-const sans = Geist({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-mono",
-});
+// Geist and Geist Mono are self-hosted from public/fonts/ (see globals.css).
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -41,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#09090d",
+  themeColor: "#1b1916",
   colorScheme: "dark",
 };
 
@@ -55,12 +37,9 @@ const motionReadyScript = `(function(){try{if(!matchMedia("(prefers-reduced-moti
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${sans.variable} ${serif.variable} ${mono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/fonts/Geist-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: motionReadyScript }} />
       </head>
       <body id="top">{children}</body>

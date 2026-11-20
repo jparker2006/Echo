@@ -25,9 +25,9 @@ function ProjectLink({ href, children }: { href: string; children: ReactNode }) 
 }
 
 /**
- * One projects list with a single self-rewriting `ls` toggle.
- *  - collapsed → `~ $ ls /projects        ▸ N more`   (featured only)
- *  - expanded  → `~ $ ls -a /projects     ▾ show less` (all, newest-first)
+ * One projects list with a single show-more toggle.
+ *  - collapsed → featured projects only, "Show N more"
+ *  - expanded  → every project, newest-first, "Show less"
  *
  * Every project is rendered exactly once, in newest-first order. Non-featured
  * rows are collapsed to zero height until expanded, then fade + slide into
@@ -39,9 +39,9 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
   const scope = useRef<HTMLElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
 
-  // Terminal print-in: the command line + the featured rows fade/rise in
-  // sequentially like stdout, a quick stagger that completes well under 1s.
-  // The hidden `ls -a` rows are handled by the existing CSS toggle (staggered
+  // Print-in: the toggle + the featured rows fade/rise in
+  // in sequence, a quick stagger that completes well under 1s.
+  // The hidden rows are handled by the existing CSS toggle (staggered
   // via --row), so they're left out here. Gated by matchMedia; under reduce
   // nothing is hidden so there's nothing to do.
   useGSAP(
@@ -73,11 +73,11 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
     { scope }
   );
 
-  // running index over the collapsible (hidden) rows, so the `ls -a` reveal
+  // running index over the collapsible (hidden) rows, so the reveal
   // cascades top-to-bottom instead of all rows appearing at once.
   let collapsibleIndex = 0;
   // show each year once, on the first row of that year that's on screen:
-  // in `ls` that's the first featured row, in `ls -a` the first row overall.
+  // collapsed, that's the first featured row; expanded, the first row overall.
   const seenAll = new Set<number>();
   const seenFeatured = new Set<number>();
 
@@ -93,20 +93,13 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
       <button
         ref={toggle}
         type="button"
-        className="cmd cmd-toggle"
+        className="log-toggle"
         aria-expanded={expanded}
         aria-controls="project-log"
         onClick={() => setExpanded((open) => !open)}
         data-print
       >
-        <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>{" "}
-        <span className="cmd-text">{expanded ? "ls -a /projects" : "ls /projects"}</span>
-        <span className="cmd-hint">
-          <span className="cmd-caret" aria-hidden="true">
-            {expanded ? "▾" : "▸"}
-          </span>{" "}
-          {expanded ? "show less" : `${hiddenCount} more`}
-        </span>
+        {expanded ? "Show less" : `Show ${hiddenCount} more`}
       </button>
 
       <ol className="project-log" id="project-log">
@@ -181,17 +174,12 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
       {expanded ? (
         <button
           type="button"
-          className="cmd cmd-toggle cmd-toggle--end"
+          className="log-toggle log-toggle--end"
           aria-expanded={expanded}
           aria-controls="project-log"
           onClick={collapseFromEnd}
         >
-          <span className="cmd-hint">
-            <span className="cmd-caret" aria-hidden="true">
-              ▴
-            </span>{" "}
-            show less
-          </span>
+          Show less
         </button>
       ) : null}
     </section>

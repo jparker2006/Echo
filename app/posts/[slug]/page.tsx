@@ -55,11 +55,7 @@ export default async function PostPage({
       <article className="article">
         <header className="article-head">
           <p className="kicker" data-reveal>
-            <Link href="/">posts</Link>
-            <span className="kicker-sep" aria-hidden="true">
-              /
-            </span>
-            <span className="kicker-file">{post.slug}.md</span>
+            <Link href="/">Posts</Link>
           </p>
           <h1 className="post-h1" data-reveal>{post.title}</h1>
           {post.description ? (
@@ -71,7 +67,7 @@ export default async function PostPage({
             <time dateTime={post.date}>{formatDate(post.date)}</time>
             <span>{post.minutes} min read</span>
             {post.tags && post.tags.length > 0 ? (
-              <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
+              <span className="tags">{post.tags.join(", ")}</span>
             ) : null}
           </p>
         </header>
@@ -80,19 +76,19 @@ export default async function PostPage({
       <nav className="article-foot" aria-label="More posts">
         {older ? (
           <Link href={`/posts/${older.slug}`} className="pager pager--prev">
-            <span className="pager-label">← older</span>
+            <span className="pager-label">← Older</span>
             <span className="pager-title">{older.title}</span>
           </Link>
         ) : null}
         {newer ? (
           <Link href={`/posts/${newer.slug}`} className="pager pager--next">
-            <span className="pager-label">newer →</span>
+            <span className="pager-label">Newer →</span>
             <span className="pager-title">{newer.title}</span>
           </Link>
         ) : null}
       </nav>
       <p className="back">
-        <Link href="/">← cd ..</Link>
+        <Link href="/">← All posts</Link>
       </p>
       {/* last in the page so keyboard users reach the landed rocket after the post */}
       <ReadingRocket />

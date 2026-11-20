@@ -1,5 +1,5 @@
 /* ============================================================
-   guilloche — the engraved planet (hero) and horizon (footer).
+   guilloche — the engraved planet on the home page.
    One drawing routine, two painters: a canvas painter for the live
    frames and an SVG painter for the server-rendered still. Lines are
    dense parallel curves displaced by smooth waves and noise; brightness
@@ -20,25 +20,18 @@ export interface Painter {
   disc(cx: number, cy: number, r: number, stops: Stop[], fx?: number, fy?: number): void;
 }
 
-export interface Light {
-  sunX: number; // footer: where the light falls across the width (px)
-  spotX: number; // footer: pointer spotlight (px, relative to the art box)
-  spotY: number;
-  spot: number; // 0..1 strength of the spotlight
-}
-
 /** the still frame's time; the canvas starts on the same frame */
 export const STATIC_T = 4.2;
 
 const TAU = Math.PI * 2;
 const VIEW_TILT = 0.42; // the hero planet's north pole tips toward the viewer
-const TEAL_SHADOW: RGB = [18, 63, 73]; // #123f49
-const TEAL: RGB = [60, 141, 157]; // #3c8d9d
-const GLINT: RGB = [185, 201, 198]; // #b9c9c6
-const ORANGE: RGB = [216, 117, 50]; // #d87532 — light only
-const ORANGE_HOT: RGB = [255, 214, 170];
-const STAR: RGB = [214, 236, 238];
-const ROCKET: RGB = [226, 233, 233];
+// cream and blue on the warm ground (#1b1916): blue carries the shadow side,
+// cream only where the light lands
+const BLUE_DEEP: RGB = [30, 42, 60]; // #1e2a3c
+const BLUE: RGB = [86, 124, 168]; // #567ca8
+const CREAM: RGB = [207, 198, 184]; // #cfc6b8 — light only
+const CREAM_HOT: RGB = [243, 238, 232]; // #f3eee8
+const STAR: RGB = [207, 198, 184];
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const mix = (a: RGB, b: RGB, t: number): RGB => [
@@ -46,15 +39,9 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
   a[1] + (b[1] - a[1]) * t,
   a[2] + (b[2] - a[2]) * t,
 ];
-/** engraving ramp: shadow → mid teal → glint */
-function tealFor(b: number): RGB {
-  return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
-}
-/** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
-const HERO_DEEP: RGB = [13, 50, 60];
-const HERO_LIGHT: RGB = [104, 178, 190];
-function heroTealFor(b: number): RGB {
-  return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
+/** engraving ramp: deep blue shadow → blue → cream where it is lit */
+function heroRamp(b: number): RGB {
+  return b < 0.7 ? mix(BLUE_DEEP, BLUE, b / 0.7) : mix(BLUE, CREAM, (b - 0.7) / 0.3);
 }
 
 // ---- noise: seeded starfields and smooth value noise (periodic when fed a circle) ----
@@ -73,25 +60,10 @@ function hash(i: number, j: number) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-/** smooth value noise in [0, 1] */
-function noise(x: number, y: number) {
-  const xi = Math.floor(x);
-  const yi = Math.floor(y);
-  const xf = x - xi;
-  const yf = y - yi;
-  const u = xf * xf * (3 - 2 * xf);
-  const v = yf * yf * (3 - 2 * yf);
-  const a = hash(xi, yi);
-  const b = hash(xi + 1, yi);
-  const c = hash(xi, yi + 1);
-  const d = hash(xi + 1, yi + 1);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-
 // ---- stroking: split a series into runs, then bucket runs by brightness ----
 
 /** Strokes xy[i0..i1] as polylines grouped by brightness bucket. Each bucket
-    sets the colour, alpha and width; `warm` runs take the orange light. */
+    sets the colour, alpha and width; `warm` runs take the cream light. */
 function strokeRun(
   p: Painter,
   xy: number[],
@@ -109,7 +81,7 @@ function strokeRun(
     if (cur.length >= 4) {
       const bi = key >> 1;
       const b = (bi + 0.5) / B;
-      if (key & 1) p.line(cur, mix(ORANGE, ORANGE_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
+      if (key & 1) p.line(cur, mix(CREAM, CREAM_HOT, b), (0.25 + 0.7 * b) * gain, 0.5 + 0.9 * b);
       else p.line(cur, ramp(b), (0.2 + 0.75 * b) * gain, 0.4 + 0.9 * b);
     }
     cur = [];
@@ -137,7 +109,7 @@ function strokeSeries(
   warm: boolean[] | null,
   B: number,
   gain = 1,
-  ramp: (b: number) => RGB = tealFor
+  ramp: (b: number) => RGB = heroRamp
 ) {
   const n = bright.length;
   let i = 0;
@@ -425,7 +397,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
 
   starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
 
-  // rings. Teal everywhere; burnt orange only where the ring catches the sun.
+  // rings. Blue everywhere; cream only where the ring catches the sun.
   const ringPass = (front: boolean) => {
     for (let i = 0; i < NR; i++) {
       const a = R * (1.32 + (0.66 * i) / Math.max(1, NR - 1));
@@ -442,7 +414,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
         warm.push(lit > 0.45);
         bright.push(front ? 0.3 + 0.55 * Math.max(0, lit) : 0.14);
       }
-      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5, heroTealFor);
+      strokeSeries(p, xy, bright, ok, warm, B, front ? 1.5 : 0.5, heroRamp);
     }
   };
   // one dotted outer orbit
@@ -451,18 +423,18 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     const [sx, sy] = ringPoint(R * 2.45, (TAU * j) / 180, -0.26, cT, sT);
     orbit.push(cx + sx, cy - sy);
   }
-  p.line(orbit, TEAL, 0.3, 0.8, [1, 5]);
+  p.line(orbit, BLUE, 0.35, 0.8, [1, 5]);
   ringPass(false);
 
-  // body: a dark teal disc lit from the sun side
+  // body: a dark blue disc lit from the sun side
   p.disc(
     cx,
     cy,
     R,
     [
-      [0, [18, 58, 68], 1],
-      [0.6, [6, 24, 29], 1],
-      [1, [2, 10, 13], 1],
+      [0, [44, 56, 74], 1],
+      [0.6, [26, 30, 38], 1],
+      [1, [18, 18, 20], 1],
     ],
     cx + L[0] * R * 0.4,
     cy - L[1] * R * 0.4
@@ -496,16 +468,16 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
       const d = X * L[0] + y2 * L[1] + z2 * L[2];
       bright.push(clamp01(0.24 + 0.7 * Math.max(0, d) + 0.06 * c.w[m] + 0.12 * (1 - z2) ** 4));
     }
-    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroTealFor);
+    strokeSeries(p, xy, bright, ok, null, B, 1.35, heroRamp);
   }
 
-  // crisp limb, and a thin burnt-orange glow on the lit side
+  // crisp limb, and a thin cream glow on the lit side
   const limb: number[] = [];
   for (let j = 0; j <= 120; j++) {
     const a = (TAU * j) / 120;
     limb.push(cx + R * Math.cos(a), cy + R * Math.sin(a));
   }
-  p.line(limb, TEAL, 0.6, 1.1);
+  p.line(limb, BLUE, 0.6, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
     [0.9, 0.8, 2.4, 0.22],
@@ -516,131 +488,11 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
       const a = sunAng - span + (2 * span * j) / 40;
       arc.push(cx + (R + rad) * Math.cos(a), cy + (R + rad) * Math.sin(a));
     }
-    p.line(arc, ORANGE, alpha, width);
+    p.line(arc, CREAM, alpha, width);
   }
 
   // rings, front half (over the body)
   ringPass(true);
-}
-
-// ============================================================
-// footer horizon
-// ============================================================
-
-/** Vertical wave on each concentric arc of the horizon. */
-function arcWave(xs: number, k: number, t: number) {
-  return (
-    0.5 * Math.sin(11 * xs + 0.35 * k + 0.22 * t) +
-    0.35 * Math.sin(23 * xs - 0.2 * k - 0.31 * t + 1.7) +
-    0.6 * (2 * noise(xs * 5 + 3, k * 0.22 + 0.04 * t) - 1)
-  );
-}
-
-/** Draws the planet limb, its trails, stars and the rocket on its exhaust.
-    The horizon's top sits at 46% of the height, and its curve drops to the bottom corners. */
-export function paintFooter(p: Painter, W: number, H: number, t: number, light: Light, q: number) {
-  const cx = W / 2;
-  const y0 = H * 0.46;
-  const s = H - y0;
-  const Rf = (s * s + (W / 2) * (W / 2)) / (2 * s);
-  const cy = y0 + Rf;
-  const B = q >= 1 ? 8 : 2;
-  const step = q >= 1 ? Math.max(2.4, H / 120) : Math.max(5, H / 50);
-  const NX = Math.round(240 * q);
-  const K = Math.ceil(s / step) + 2;
-  const sunX = light.sunX;
-  const spotR2 = (0.1 * W) ** 2;
-  const sun = (x: number) => Math.exp(-(((x - sunX) / (0.32 * W)) ** 2));
-  const spot = (x: number, y: number) =>
-    light.spot * Math.exp(-((x - light.spotX) ** 2 + (y - light.spotY) ** 2) / spotR2);
-
-  starfield(p, 0, 0, W, y0 * 1.02, Math.round(120 * q), 11);
-
-  // light trails: loops sweeping behind the planet, with a bright head moving along each
-  const trails = [
-    { x: 0.3, y: 0.42, a: 0.15, b: 0.11, rot: -0.28 },
-    { x: 0.7, y: 0.36, a: 0.19, b: 0.09, rot: 0.22 },
-    { x: 0.5, y: 0.5, a: 0.13, b: 0.1, rot: -0.12 },
-    { x: 0.84, y: 0.44, a: 0.12, b: 0.08, rot: 0.5 },
-  ];
-  const NT = Math.round(200 * q);
-  const lines = Math.max(2, Math.round(6 * q));
-  trails.forEach((tr, m) => {
-    const head = t * 0.25 + m * 2;
-    const dir = m % 2 ? 1 : -1;
-    for (let l = 0; l < lines; l++) {
-      const off = (l - lines / 2) * 1.5;
-      const xy: number[] = [];
-      const bright: number[] = [];
-      for (let j = 0; j <= NT; j++) {
-        const u = (TAU * j) / NT;
-        const a = tr.a * W + off;
-        const b = tr.b * H + off * 0.5;
-        const ex = a * Math.cos(u + dir * t * 0.02);
-        const ey = b * Math.sin(u + dir * t * 0.02);
-        const rot = tr.rot;
-        xy.push(tr.x * W + ex * Math.cos(rot) - ey * Math.sin(rot), tr.y * H + ex * Math.sin(rot) + ey * Math.cos(rot));
-        bright.push(0.3 + 0.5 * (0.5 + 0.5 * Math.cos(u - head)));
-      }
-      strokeSeries(p, xy, bright, null, null, B, 0.4);
-    }
-  });
-
-  // the planet: concentric arcs, each one waved; the top arc is the limb
-  for (let k = 0; k < K; k++) {
-    const r = Rf - k * step;
-    const amp = step * 1.5 * Math.min(1, 0.3 + k / 6);
-    const xy: number[] = [];
-    const bright: number[] = [];
-    for (let i = 0; i <= NX; i++) {
-      const x = -0.02 * W + (1.04 * W * i) / NX;
-      const dx = x - cx;
-      const ysq = Math.max(0, r * r - dx * dx);
-      const xs = dx / W;
-      const w = arcWave(xs, k, t);
-      const y = cy - Math.sqrt(ysq) + amp * w;
-      xy.push(x, y);
-      const depth = 1 - (0.35 * k) / K;
-      bright.push(clamp01((0.16 + 0.42 * sun(x) + 0.45 * spot(x, y) + 0.12 * w) * depth + 0.2 * Math.max(0, 1 - k / 10)));
-    }
-    strokeSeries(p, xy, bright, null, null, B);
-
-    if (k === 0) {
-      // the limb: a soft orange glow, then the crisp warm line where the sun falls
-      p.line(xy, ORANGE, 0.12, 7);
-      const warmAll = xy.map(() => true);
-      strokeSeries(p, xy, bright.map((b) => clamp01(0.35 + 0.65 * b)), null, warmAll, B);
-    }
-  }
-
-  // the rocket: a slim body lifting off the limb, its thin plume trailing down to the limb
-  const h = Math.max(16, Math.min(34, H * 0.11));
-  const tailY = y0 - H * 0.2; // rocket tail; the plume runs from here down to the limb
-  const flicker = 1 + 0.2 * Math.sin(t * 9);
-  p.disc(cx, y0, Math.max(30, W * 0.05), [
-    [0, ORANGE_HOT, 0.5],
-    [0.25, ORANGE, 0.2],
-    [1, ORANGE, 0],
-  ]);
-  const pw = 0.09 * h; // plume half-width at the tail; it tapers to a point on the limb
-  p.fill([cx - pw, tailY, cx + pw, tailY, cx + 0.6, y0, cx - 0.6, y0], ORANGE, 0.35 * flicker);
-  p.line([cx, tailY, cx, y0], ORANGE_HOT, 0.9, 1.2 * flicker);
-  const body: [number, number][] = [
-    [0, -1.05],
-    [0.1, -0.7],
-    [0.1, -0.2],
-    [0.2, 0],
-    [-0.2, 0],
-    [-0.1, -0.2],
-    [-0.1, -0.7],
-  ];
-  const poly: number[] = [];
-  for (const [dx, dy] of body) poly.push(cx + dx * h, tailY + dy * h);
-  p.fill(poly, ROCKET, 0.8);
-  p.disc(cx, tailY - 0.7 * h, h * 0.06, [
-    [0, [9, 14, 18], 0.9],
-    [1, [9, 14, 18], 0],
-  ]);
 }
 
 // ============================================================

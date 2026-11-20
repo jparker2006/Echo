@@ -13,14 +13,10 @@ export default function ProjectsPage() {
     <Shell>
       <header className="page-head">
         <p className="kicker" data-reveal>
-          <span className="kicker-file">~/projects</span>
-          <span className="kicker-sep" aria-hidden="true">
-            /
-          </span>
-          {projects.length} entries
+          {projects.length} projects
         </p>
         <h1 className="page-title" data-reveal>
-          projects
+          Projects
         </h1>
       </header>
       <ProjectLog projects={projects} />

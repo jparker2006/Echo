@@ -23,28 +23,19 @@ export default function Home() {
           <div className="hero-copy">
             <p className="kicker" data-reveal>
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
-              <span className="kicker-sep" aria-hidden="true">
-                |
-              </span>
-              <span className="kicker-min">{latest.minutes} min</span>
+              <span aria-hidden="true"> · </span>
+              {latest.minutes} min read
             </p>
             <h2 className="hero-title" id="hero-title" data-reveal>
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
             </h2>
-            <p className="hero-copy-dek" data-reveal>
+            <p className="hero-dek" data-reveal>
               {firstSentence(latest.excerpt)}
             </p>
             <p className="hero-actions" data-reveal>
-              <Link href={`/posts/${latest.slug}`} className="cmd-link">
-                <span className="cta-cmd">
-                  <span className="cmd-sigil" aria-hidden="true">
-                    $
-                  </span>{" "}
-                  cat {latest.slug}.md
-                </span>
-                <span className="cta-hint">
-                  read <span className="cta-key" aria-hidden="true">↵</span>
-                </span>
+              <Link href={`/posts/${latest.slug}`} className="btn-primary">
+                Read the post
+                <span className="sr-only">: {latest.title}</span>
               </Link>
             </p>
           </div>
@@ -57,21 +48,20 @@ export default function Home() {
       <section className="home-section" aria-labelledby="posts-head">
         <SectionHead
           id="posts-head"
-          command="ls /posts"
+          title="Posts"
           aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
         />
         <ol className="post-list">
           {posts.map((post) => (
             <li key={post.slug} className="post-item" data-reveal-row>
-              <div className="post-main">
-                <p className="post-date">
-                  <time dateTime={post.date}>{formatDate(post.date)}</time>
-                </p>
-                <h3 className="post-title">
-                  <Link href={`/posts/${post.slug}`}>{post.title}</Link>
-                </h3>
-                <p className="post-date post-read">{post.minutes} min</p>
-              </div>
+              <h3 className="post-title">
+                <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+              </h3>
+              <p className="post-date">
+                <time dateTime={post.date}>{formatDate(post.date)}</time>
+                <span aria-hidden="true"> · </span>
+                {post.minutes} min
+              </p>
             </li>
           ))}
         </ol>
@@ -80,8 +70,8 @@ export default function Home() {
       <section className="home-section" aria-labelledby="projects-head">
         <SectionHead
           id="projects-head"
-          command="ls /projects"
-          aside={<Link href="/projects">all {projects.length} →</Link>}
+          title="Projects"
+          aside={<Link href="/projects">All {projects.length} →</Link>}
         />
         <ul className="project-grid">
           {picks.map((project) => {
@@ -128,9 +118,7 @@ export default function Home() {
                     {project.year}
                     {where ? (
                       <>
-                        <span className="project-card-sep" aria-hidden="true">
-                          |
-                        </span>
+                        <span aria-hidden="true"> · </span>
                         {where}
                       </>
                     ) : null}

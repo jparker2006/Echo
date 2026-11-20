@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getAllPosts, getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { Shell } from "@/components/chrome";
-import { ReadingRocket } from "@/components/motion/reading-rocket";
+import { ReadingProgress } from "@/components/motion/reading-progress";
 
 // Only render posts that exist on disk; unknown slugs 404.
 export const dynamicParams = false;
@@ -90,8 +90,7 @@ export default async function PostPage({
       <p className="back">
         <Link href="/">← All posts</Link>
       </p>
-      {/* last in the page so keyboard users reach the landed rocket after the post */}
-      <ReadingRocket />
+      <ReadingProgress />
     </Shell>
   );
 }

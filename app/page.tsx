@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
-import { HeroPlanet } from "@/components/guilloche-art";
+import { HeroPainting, HeroPlanet } from "@/components/guilloche-art";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -20,19 +20,20 @@ export default function Home() {
 
       {latest ? (
         <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="kicker" data-reveal>
+          <HeroPainting />
+          <div className="hero-card" data-reveal>
+            <p className="kicker">
               <time dateTime={latest.date}>{formatDate(latest.date)}</time>
               <span aria-hidden="true"> · </span>
               {latest.minutes} min read
             </p>
-            <h2 className="hero-title" id="hero-title" data-reveal>
+            <h2 className="hero-title" id="hero-title">
               <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
             </h2>
-            <p className="hero-dek" data-reveal>
+            <p className="hero-dek">
               {firstSentence(latest.excerpt)}
             </p>
-            <p className="hero-actions" data-reveal>
+            <p className="hero-actions">
               <Link href={`/posts/${latest.slug}`} className="btn-primary">
                 Read the post
                 <span className="sr-only">: {latest.title}</span>

@@ -34,9 +34,9 @@
   --orchid: #d9afe8;
 
   /* the etching plate */
-  --etch-bg: #141a22;
-  --etch-ink: #7fa6d6;
-  --etch-glint: #cfe0f5;
+  --etch-bg: #1e1b18;
+  --etch-ink: #86a6c8;
+  --etch-glint: #e4dccd;
 
   /* names the Snake Eyes demo still reads */
   --accent: var(--orchid);
@@ -227,15 +227,42 @@ main:focus {
   padding: clamp(3rem, 8vw, 6.5rem) 0 clamp(4rem, 9vw, 7.5rem);
 }
 
+.hero-byline {
+  color: var(--cream);
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: clamp(1.75rem, 4vw, 3rem);
+}
+
+.hero-latest::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: var(--sea);
+  vertical-align: 0.12em;
+}
+
 .hero-title {
   margin-top: 1rem;
-  font-size: clamp(3.25rem, 9vw, 7.5rem);
+  font-size: clamp(3rem, 7.5vw, 6.5rem);
   letter-spacing: -0.06em;
+}
+
+.hero-title a:hover {
+  color: var(--cream);
 }
 
 .hero-dek {
   margin-top: 1.5rem;
-  max-width: 26rem;
+  max-width: 32rem;
   font-size: clamp(1.125rem, 1.6vw, 1.3rem);
   line-height: 1.45;
   color: var(--ink-2);

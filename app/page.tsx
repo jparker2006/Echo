@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllPosts, formatDate } from "@/lib/posts";
+import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
 import { Etching } from "@/components/etching";
@@ -21,22 +21,34 @@ export default function Home() {
     <Shell>
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="kicker" data-reveal>
-            echo · a web log
-          </p>
-          <h1 className="hero-title" id="hero-title" data-reveal>
-            Jake Parker
-          </h1>
-          <p className="hero-dek" data-reveal>
-            Notes on code, craft and the things I build.
+          <p className="kicker hero-byline" data-reveal>
+            Jake Parker · a web log
           </p>
           {latest ? (
-            <p className="hero-actions" data-reveal>
-              <Link href={`/posts/${latest.slug}`} className="button">
-                Read the latest
-              </Link>
-            </p>
-          ) : null}
+            <>
+              <p className="kicker hero-meta" data-reveal>
+                <span className="hero-latest">Latest</span>
+                <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+                <span aria-hidden="true">·</span>
+                <span>{latest.minutes} min read</span>
+              </p>
+              <h1 className="hero-title" id="hero-title" data-reveal>
+                <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
+              </h1>
+              <p className="hero-dek" data-reveal>
+                {firstSentence(latest.excerpt)}
+              </p>
+              <p className="hero-actions" data-reveal>
+                <Link href={`/posts/${latest.slug}`} className="button" aria-label={`Read “${latest.title}”`}>
+                  Read
+                </Link>
+              </p>
+            </>
+          ) : (
+            <h1 className="hero-title" id="hero-title" data-reveal>
+              Jake Parker
+            </h1>
+          )}
         </div>
         <figure className="art-card" data-reveal>
           <Etching />

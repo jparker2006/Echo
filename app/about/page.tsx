@@ -19,6 +19,9 @@ export default async function AboutPage() {
     <Shell>
       <article className="article about">
         <header className="page-head about-head">
+          <p className="kicker head-kicker" data-reveal>
+            About
+          </p>
           <h1 className="page-title" data-reveal>
             {title}
           </h1>

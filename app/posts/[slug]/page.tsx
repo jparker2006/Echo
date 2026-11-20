@@ -54,8 +54,10 @@ export default async function PostPage({
     <Shell>
       <article className="article">
         <header className="article-head">
-          <p className="kicker" data-reveal>
-            <Link href="/">Posts</Link>
+          <p className="kicker head-kicker" data-reveal>
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
+            <span aria-hidden="true"> · </span>
+            <span>{post.minutes} min read</span>
           </p>
           <h1 className="post-h1" data-reveal>{post.title}</h1>
           {post.description ? (
@@ -63,13 +65,11 @@ export default async function PostPage({
               {post.description}
             </p>
           ) : null}
-          <p className="post-meta" data-reveal>
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
-            <span>{post.minutes} min read</span>
-            {post.tags && post.tags.length > 0 ? (
+          {post.tags && post.tags.length > 0 ? (
+            <p className="post-meta" data-reveal>
               <span className="tags">{post.tags.join(", ")}</span>
-            ) : null}
-          </p>
+            </p>
+          ) : null}
         </header>
         <div className="prose post-body" dangerouslySetInnerHTML={{ __html: html }} />
       </article>

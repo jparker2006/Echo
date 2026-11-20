@@ -497,17 +497,40 @@ main:focus {
   letter-spacing: -0.05em;
 }
 
+/* post and about heads: the reference's kicker label over a heavy display
+   title, then a sub-sized dek */
+.head-kicker {
+  color: var(--grey2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.about-head .page-title,
+.post-h1 {
+  margin: 18px 0 0;
+  font-size: clamp(44px, 7.4vw, 80px);
+  font-weight: 760;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
 .about-head {
   margin-bottom: 40px;
   border-bottom: 1px solid var(--line);
 }
 
-/* the opening line reads as a lede */
+/* the opening line reads as the reference's sub */
 .about-body > p:first-child {
-  color: var(--ink);
-  font-size: 1.3em;
-  line-height: 1.45;
-  letter-spacing: -0.015em;
+  color: #e1d7cb;
+  font-size: clamp(18px, 1.8vw, 24px);
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 /* the closing contact line signs off quietly */
@@ -535,29 +558,13 @@ main:focus {
   border-bottom: 1px solid var(--line);
 }
 
-/* the "Posts" crumb is small, so give it a 44px tap area */
-.article-head .kicker a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -12px 0;
-}
-
-.post-h1 {
-  margin: 16px 0;
-  font-size: clamp(40px, 6vw, 64px);
-  font-weight: 760;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  text-wrap: balance;
-}
-
 .article-dek {
   max-width: 36rem;
+  margin-top: 22px;
   color: #e1d7cb;
-  font-size: 20px;
-  line-height: 1.45;
-  letter-spacing: -0.015em;
+  font-size: clamp(18px, 1.8vw, 24px);
+  line-height: 1.4;
+  letter-spacing: -0.025em;
   text-wrap: pretty;
 }
 
@@ -1094,6 +1101,11 @@ code[data-theme] span {
   }
   .prose {
     font-size: 17px;
+  }
+  .about-head .page-title,
+  .post-h1 {
+    font-size: clamp(40px, 11.5vw, 52px);
+    letter-spacing: -0.05em;
   }
   .post-item {
     flex-direction: column;

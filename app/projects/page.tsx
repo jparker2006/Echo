@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { projects } from "@/data/projects";
-import { Shell } from "@/components/chrome";
+import { Shell, Kicker, PageBand } from "@/components/chrome";
 import { ProjectLog } from "@/components/project-log";
 
 export const metadata: Metadata = {
@@ -11,18 +11,20 @@ export const metadata: Metadata = {
 export default function ProjectsPage() {
   return (
     <Shell>
-      <header className="page-head">
-        <p className="kicker" data-reveal>
-          <span className="kicker-file">~/projects</span>
-          <span className="kicker-sep" aria-hidden="true">
-            /
-          </span>
-          {projects.length} entries
-        </p>
-        <h1 className="page-title" data-reveal>
-          projects
-        </h1>
-      </header>
+      <PageBand>
+        <header className="page-head">
+          <Kicker>
+            Work
+            <span className="kicker-sep" aria-hidden="true">
+              ·
+            </span>
+            {projects.length} entries
+          </Kicker>
+          <h1 className="page-title" data-reveal>
+            Projects
+          </h1>
+        </header>
+      </PageBand>
       <ProjectLog projects={projects} />
     </Shell>
   );

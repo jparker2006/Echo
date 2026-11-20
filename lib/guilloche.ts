@@ -50,11 +50,12 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
 function tealFor(b: number): RGB {
   return b < 0.7 ? mix(TEAL_SHADOW, TEAL, b / 0.7) : mix(TEAL, GLINT, (b - 0.7) / 0.3);
 }
-/** hero ramp: deep-teal shadow → teal → light teal. Never reaches icy white. */
-const HERO_DEEP: RGB = [13, 50, 60];
-const HERO_LIGHT: RGB = [104, 178, 190];
+/** hero ramp: fine blue engraving, ink-blue shadow → cornflower → pale luminous blue. */
+const HERO_DEEP: RGB = [34, 58, 104];
+const HERO_MID: RGB = [92, 146, 222];
+const HERO_LIGHT: RGB = [200, 224, 255];
 function heroTealFor(b: number): RGB {
-  return b < 0.7 ? mix(HERO_DEEP, TEAL, b / 0.7) : mix(TEAL, HERO_LIGHT, (b - 0.7) / 0.3);
+  return b < 0.7 ? mix(HERO_DEEP, HERO_MID, b / 0.7) : mix(HERO_MID, HERO_LIGHT, (b - 0.7) / 0.3);
 }
 
 // ---- noise: seeded starfields and smooth value noise (periodic when fed a circle) ----
@@ -423,9 +424,9 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
   const NR = Math.round(28 * q);
   const psi = -0.32;
 
-  starfield(p, 0, 0, W, H, Math.round(90 * q), 7);
+  starfield(p, 0, 0, W, H * 0.6, Math.round(40 * q), 7);
 
-  // rings. Teal everywhere; burnt orange only where the ring catches the sun.
+  // rings. Blue everywhere; dusk orange only where the ring catches the sun.
   const ringPass = (front: boolean) => {
     for (let i = 0; i < NR; i++) {
       const a = R * (1.32 + (0.66 * i) / Math.max(1, NR - 1));
@@ -451,18 +452,18 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     const [sx, sy] = ringPoint(R * 2.45, (TAU * j) / 180, -0.26, cT, sT);
     orbit.push(cx + sx, cy - sy);
   }
-  p.line(orbit, TEAL, 0.3, 0.8, [1, 5]);
+  p.line(orbit, HERO_MID, 0.35, 0.8, [1, 5]);
   ringPass(false);
 
-  // body: a dark teal disc lit from the sun side
+  // body: a dark ink-blue disc lit from the sun side
   p.disc(
     cx,
     cy,
     R,
     [
-      [0, [18, 58, 68], 1],
-      [0.6, [6, 24, 29], 1],
-      [1, [2, 10, 13], 1],
+      [0, [30, 50, 92], 1],
+      [0.6, [12, 20, 40], 1],
+      [1, [6, 9, 20], 1],
     ],
     cx + L[0] * R * 0.4,
     cy - L[1] * R * 0.4
@@ -505,7 +506,7 @@ export function paintHero(p: Painter, W: number, H: number, t: number, q: number
     const a = (TAU * j) / 120;
     limb.push(cx + R * Math.cos(a), cy + R * Math.sin(a));
   }
-  p.line(limb, TEAL, 0.6, 1.1);
+  p.line(limb, HERO_LIGHT, 0.7, 1.1);
   const sunAng = Math.atan2(-L[1], L[0]);
   for (const [span, rad, width, alpha] of [
     [0.9, 0.8, 2.4, 0.22],

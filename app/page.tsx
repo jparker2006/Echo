@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllPosts, formatDate, firstSentence } from "@/lib/posts";
 import { projects } from "@/data/projects";
 import { Shell, SectionHead } from "@/components/chrome";
-import { HeroPlanet } from "@/components/guilloche-art";
+import { Painting } from "@/components/painting";
 
 // the four projects that lead the home page, in this order
 const HOME_PICKS = ["OpenWiz", "Lexicon", "PLOT", "Snake Eyes"];
@@ -20,45 +20,37 @@ export default function Home() {
 
       {latest ? (
         <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="kicker" data-reveal>
-              <time dateTime={latest.date}>{formatDate(latest.date)}</time>
-              <span className="kicker-sep" aria-hidden="true">
-                |
-              </span>
-              <span className="kicker-min">{latest.minutes} min</span>
-            </p>
-            <h2 className="hero-title" id="hero-title" data-reveal>
-              <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
-            </h2>
-            <p className="hero-copy-dek" data-reveal>
-              {firstSentence(latest.excerpt)}
-            </p>
-            <p className="hero-actions" data-reveal>
-              <Link href={`/posts/${latest.slug}`} className="cmd-link">
-                <span className="cta-cmd">
-                  <span className="cmd-sigil" aria-hidden="true">
-                    $
-                  </span>{" "}
-                  cat {latest.slug}.md
-                </span>
-                <span className="cta-hint">
-                  read <span className="cta-key" aria-hidden="true">↵</span>
-                </span>
-              </Link>
-            </p>
-          </div>
-          <div className="hero-art" data-reveal>
-            <HeroPlanet />
-          </div>
+          <Painting variant="hero">
+            <div className="hero-stage">
+              <article className="hero-card" data-reveal>
+                <p className="kicker">
+                  <span className="kicker-tag">Latest</span>
+                  <time dateTime={latest.date}>{formatDate(latest.date)}</time>
+                  <span className="kicker-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>{latest.minutes} min</span>
+                </p>
+                <h2 className="hero-title" id="hero-title">
+                  <Link href={`/posts/${latest.slug}`}>{latest.title}</Link>
+                </h2>
+                <p className="hero-dek">{firstSentence(latest.excerpt)}</p>
+                <p className="hero-actions">
+                  <Link href={`/posts/${latest.slug}`} className="btn-primary" aria-describedby="hero-title">
+                    Read the post <span aria-hidden="true">→</span>
+                  </Link>
+                </p>
+              </article>
+            </div>
+          </Painting>
         </section>
       ) : null}
 
       <section className="home-section" aria-labelledby="posts-head">
         <SectionHead
           id="posts-head"
-          command="ls /posts"
-          aside={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
+          title="Posts"
+          aside={`${posts.length} ${posts.length === 1 ? "entry" : "entries"}`}
         />
         <ol className="post-list">
           {posts.map((post) => (
@@ -70,7 +62,7 @@ export default function Home() {
                 <h3 className="post-title">
                   <Link href={`/posts/${post.slug}`}>{post.title}</Link>
                 </h3>
-                <p className="post-date post-read">{post.minutes} min</p>
+                <p className="post-date post-read">{post.minutes} min read</p>
               </div>
             </li>
           ))}
@@ -80,8 +72,8 @@ export default function Home() {
       <section className="home-section" aria-labelledby="projects-head">
         <SectionHead
           id="projects-head"
-          command="ls /projects"
-          aside={<Link href="/projects">all {projects.length} →</Link>}
+          title="Projects"
+          aside={<Link href="/projects">All {projects.length} →</Link>}
         />
         <ul className="project-grid">
           {picks.map((project) => {

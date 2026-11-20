@@ -99,13 +99,12 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
         onClick={() => setExpanded((open) => !open)}
         data-print
       >
-        <span className="cmd-path">~</span> <span className="cmd-sigil">$</span>{" "}
-        <span className="cmd-text">{expanded ? "ls -a /projects" : "ls /projects"}</span>
+        <span className="cmd-text">{expanded ? "All projects" : "Selected projects"}</span>
         <span className="cmd-hint">
+          {expanded ? "Show fewer" : `Show ${hiddenCount} more`}
           <span className="cmd-caret" aria-hidden="true">
-            {expanded ? "▾" : "▸"}
-          </span>{" "}
-          {expanded ? "show less" : `${hiddenCount} more`}
+            {expanded ? " ↑" : " ↓"}
+          </span>
         </span>
       </button>
 
@@ -187,10 +186,10 @@ export function ProjectLog({ projects }: { projects: Project[] }) {
           onClick={collapseFromEnd}
         >
           <span className="cmd-hint">
+            Show fewer
             <span className="cmd-caret" aria-hidden="true">
-              ▴
-            </span>{" "}
-            show less
+              {" ↑"}
+            </span>
           </span>
         </button>
       ) : null}

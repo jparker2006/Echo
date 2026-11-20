@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getAllPosts, getPostBySlug, getPostSlugs, formatDate } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
-import { Shell } from "@/components/chrome";
+import { Shell, PageBand } from "@/components/chrome";
 import { ReadingRocket } from "@/components/motion/reading-rocket";
 
 // Only render posts that exist on disk; unknown slugs 404.
@@ -53,13 +53,14 @@ export default async function PostPage({
   return (
     <Shell>
       <article className="article">
+        <PageBand>
         <header className="article-head">
           <p className="kicker" data-reveal>
-            <Link href="/">posts</Link>
+            <Link href="/">Posts</Link>
             <span className="kicker-sep" aria-hidden="true">
               /
             </span>
-            <span className="kicker-file">{post.slug}.md</span>
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
           </p>
           <h1 className="post-h1" data-reveal>{post.title}</h1>
           {post.description ? (
@@ -68,13 +69,13 @@ export default async function PostPage({
             </p>
           ) : null}
           <p className="post-meta" data-reveal>
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
             <span>{post.minutes} min read</span>
             {post.tags && post.tags.length > 0 ? (
               <span className="tags">{post.tags.map((t) => `#${t}`).join("  ")}</span>
             ) : null}
           </p>
         </header>
+        </PageBand>
         <div className="prose post-body" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
       <nav className="article-foot" aria-label="More posts">
@@ -92,7 +93,7 @@ export default async function PostPage({
         ) : null}
       </nav>
       <p className="back">
-        <Link href="/">← cd ..</Link>
+        <Link href="/">← All posts</Link>
       </p>
       {/* last in the page so keyboard users reach the landed rocket after the post */}
       <ReadingRocket />
